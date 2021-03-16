@@ -1,0 +1,4 @@
+export default {
+  CONTROLLER_ROUTES: Symbol('CONTROLLER_ROUTES'),
+  CONTROLLER: Symbol('CONTROLLER'),
+}

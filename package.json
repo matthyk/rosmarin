@@ -6,10 +6,12 @@
   "scripts": {
     "test:precommit": "jest --config jest.config.ts --findRelatedTests",
     "test": "jest --config jest.config.ts",
-    "format": "prettier --write \"src/**/*.ts\" \"__test__/**/*.spec.ts\" \"__test__/setup.ts\" \"./**/*.ts\"",
-    "lint": "eslint \"src/**/*.ts\" \"__test__/**/*.spec.ts\" \"./**/*.ts\"",
-    "lint:fix": "eslint --fix \"src/**/*.ts\" \"__test__/**/*.spec.ts\" \"./**/*.ts\"",
-    "build": "tsc"
+    "format": "prettier --write \"src/**/*.ts\" \"__test__/**/*.spec.ts\" \"__test__/setup.ts\" \"./*.ts\"",
+    "lint": "eslint \"src/**/*.ts\" \"__test__/**/*.spec.ts\" \"./*.ts\"",
+    "lint:fix": "eslint --fix \"src/**/*.ts\" \"__test__/**/*.spec.ts\" \"./*.ts\"",
+    "build": "tsc --project tsconfig.build.json",
+    "clean": "rimraf dist",
+    "dev": "npm run build && node dist/index.js"
   },
   "keywords": [
     "REST",
@@ -18,9 +20,16 @@
   ],
   "author": "Matthias Keckl",
   "license": "MIT",
+  "dependencies": {
+    "fastify": "^3.14.0",
+    "negotiator": "^0.6.2",
+    "reflect-metadata": "^0.1.13"
+  },
   "devDependencies": {
     "@types/jest": "^26.0.20",
+    "@types/negotiator": "^0.6.1",
     "@types/node": "^14.14.31",
+    "@types/pino": "^6.3.6",
     "@typescript-eslint/eslint-plugin": "^4.16.1",
     "@typescript-eslint/parser": "^4.16.1",
     "eslint": "^7.21.0",
@@ -29,7 +38,9 @@
     "husky": "^4.3.8",
     "jest": "^26.6.3",
     "lint-staged": "^10.5.4",
+    "pino-pretty": "^4.7.1",
     "prettier": "^2.2.1",
+    "rimraf": "^3.0.2",
     "ts-jest": "^26.5.3",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.3"

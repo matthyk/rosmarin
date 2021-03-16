@@ -3,21 +3,24 @@
     "target": "es6",
     "module": "commonjs",
     "allowJs": false,
-    "checkJs": true,
+    "checkJs": false,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "types": [
+      "jest", "reflect-metadata"
+    ],
     "typeRoots": [
-      "./node_modules/@types"
+      "./node_modules/@types",
+      "./__test__/@types"
     ],
     "strict": true,
     "noImplicitAny": true,
-    "strictNullChecks": true,
+    "strictNullChecks": false,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
+    "strictPropertyInitialization": false,
     "noImplicitThis": true,
     "alwaysStrict": true,
     "noUnusedLocals": true,
@@ -33,5 +36,6 @@
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
-  }
+  },
+  "include": ["src", "__test__"]
 }
