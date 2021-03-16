@@ -1,3 +1,3 @@
 export interface RouterConfig {
-  prefix: string
+  prefix?: string
 }

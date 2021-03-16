@@ -19,13 +19,17 @@ import { ContentNegotiator, NegotiationResult } from './content-negotiator'
 import { HttpResponse } from './http-response'
 import { RoutingError } from './routing-error'
 import Ajv, { ValidateFunction } from 'ajv'
+import { RouterConfig } from './router-config'
 
 export class Router {
   private readonly fastify: FastifyInstance
   private readonly logger: Logger
   private readonly ajv
 
-  constructor(logger: Logger) {
+  constructor(
+    logger: Logger,
+    private readonly routerConfig: RouterConfig = {}
+  ) {
     this.logger = logger.child({ context: 'Router' })
 
     this.fastify = fastify({
@@ -84,8 +88,16 @@ export class Router {
           }
         })
         done()
-      }
+      },
+      { prefix: this.getPrefix() }
     )
+  }
+
+  private getPrefix(): string {
+    if (this.routerConfig.prefix)
+      return Router.sanitizeUrl(this.routerConfig.prefix, '')
+
+    return ''
   }
 
   public registerController(
