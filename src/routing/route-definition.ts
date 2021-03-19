@@ -1,5 +1,6 @@
 import { HttpMethod } from './http-method'
 import { ValidateFunction } from 'ajv'
+import { StringifyFn } from './utility-types'
 
 export interface BaseRouteDefinition {
   produces?: string[]
@@ -18,11 +19,12 @@ export interface RouteDefinition extends BaseRouteDefinition {
   path?: string
   httpMethod: HttpMethod
   schema?: Schemas<Record<string, unknown>>
-  outputSchema?: Schemas<Record<string, unknown>>
+  outputSchema?: Record<string, unknown>
 }
 
 export interface RouteDefinitionWithValidationFn extends BaseRouteDefinition {
   validationFns?: Schemas<ValidateFunction>
+  stringifyFn?: StringifyFn
 }
 
 export type test = RouteDefinition & BaseRouteDefinition & { id: number }

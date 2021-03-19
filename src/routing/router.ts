@@ -4,7 +4,7 @@ import fastify, {
   FastifyReply,
   FastifyRequest,
 } from 'fastify'
-import { Constructor, RouteStore } from './utility-types'
+import { Constructor, RouteStore, StringifyFn } from './utility-types'
 import { HttpMethod } from './http-method'
 import { Logger } from 'pino'
 import {
@@ -20,6 +20,9 @@ import { HttpResponse } from './http-response'
 import { RoutingError } from './routing-error'
 import Ajv, { ValidateFunction } from 'ajv'
 import { RouterConfig } from './router-config'
+import fastJson from 'fast-json-stringify'
+import { container } from 'tsyringe'
+import { serializeErrorResponse } from './serialization'
 
 export class Router {
   private readonly fastify: FastifyInstance
@@ -52,6 +55,7 @@ export class Router {
 
   private configureFastify(): void {
     this.fastify.setErrorHandler(errorHandler)
+
     this.fastify.addContentTypeParser(
       /\+json$/,
       // See https://github.com/fastify/fastify/issues/2930
@@ -59,9 +63,14 @@ export class Router {
       // @ts-ignore
       this.fastify.getDefaultJsonParser('error', 'error')
     )
+
     this.fastify.setValidatorCompiler(({ schema }) => {
       return this.ajv.compile(schema)
     })
+
+    this.fastify.decorateRequest('baseUrl', '')
+    this.fastify.decorateRequest('fullUrl', '')
+    this.fastify.decorateRequest('acceptedMediaType', '')
   }
 
   public async listen(): Promise<void> {
@@ -111,7 +120,7 @@ export class Router {
         `Skip controller "${controller.name}". Did you decorate it with @Controller()?`
       )
 
-    const instance = new controller()
+    const instance = container.resolve(controller)
 
     this.logger.debug(
       `Register Controller "${controller.name}". Start to search for routes...`
@@ -188,9 +197,9 @@ export class Router {
     )
   }
 
-  private createRouteHandler<T>(
+  private createRouteHandler(
     routeDefinitions: RouteDefinitionWithValidationFn[],
-    controller: T
+    controller: any
   ): RouteHandlerMethod {
     const contentNegotiator: ContentNegotiator = new ContentNegotiator(
       routeDefinitions
@@ -208,22 +217,34 @@ export class Router {
           negotiationResult.routeDefinition.validationFns
         )
 
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
+        req.fullUrl = req.protocol + '://' + req.hostname + req.url
+        req.baseUrl = req.protocol + '://' + req.hostname
+        req.acceptedMediaType = negotiationResult.acceptedMediaType
+
+        const httpResponse: HttpResponse = new HttpResponse(reply)
+
         const response: HttpResponse = await controller[
           negotiationResult.routeDefinition.method
-        ](req)
+        ](req, httpResponse)
 
-        reply
-          .status(response.statusCode)
-          .header('content-type', negotiationResult.acceptedMediaType)
-          .headers(response.headers)
-          .send(response.entity)
+        if (response.isError) {
+          reply
+            .serializer(serializeErrorResponse)
+            .type('application/vnd.error+json')
+            .send(response.entity)
+        } else {
+          if (negotiationResult.routeDefinition.stringifyFn)
+            reply.serializer(negotiationResult.routeDefinition.stringifyFn)
+
+          reply
+            .type(negotiationResult.acceptedMediaType ?? 'application/json')
+            .send(response.entity ? response.entity : undefined)
+        }
       } catch (e: unknown) {
         if (e instanceof RoutingError) {
           reply
             .header('Cache-Control', errorCacheControl)
-            .status(e.statusCode)
+            .status(e.status)
             .send(e.toJSON())
         } else {
           errorHandler(e, req, reply)
@@ -242,7 +263,7 @@ export class Router {
       const valid = validationFns.body(req.body)
       if (!valid)
         throw new RoutingError(
-          422,
+          400,
           'Unprocessable Entity',
           'Validation of request body failed.'
         ) //TODO: 400 or 422?
@@ -252,7 +273,7 @@ export class Router {
       const valid = validationFns.query(req.query)
       if (!valid)
         throw new RoutingError(
-          422,
+          400,
           'Unprocessable Entity',
           'Validation of request query parameters failed.'
         )
@@ -262,7 +283,7 @@ export class Router {
       const valid = validationFns.params(req.params)
       if (!valid)
         throw new RoutingError(
-          422,
+          400,
           'Unprocessable Entity',
           'Validation of request path parameters failed.'
         )
@@ -272,7 +293,7 @@ export class Router {
       const valid = validationFns.headers(req.headers)
       if (!valid)
         throw new RoutingError(
-          422,
+          400,
           'Unprocessable Entity',
           'Validation of request headers failed.'
         )
@@ -288,18 +309,25 @@ export class Router {
         consumes: definition.consumes,
         method: definition.method,
         validationFns: {
-          body: this.compileSchema(definition.schema?.body),
-          query: this.compileSchema(definition.schema?.query),
-          headers: this.compileSchema(definition.schema?.headers),
-          params: this.compileSchema(definition.schema?.params),
+          body: this.compileValidationSchema(definition.schema?.body),
+          query: this.compileValidationSchema(definition.schema?.query),
+          headers: this.compileValidationSchema(definition.schema?.headers),
+          params: this.compileValidationSchema(definition.schema?.params),
         },
+        stringifyFn: this.compileSerializationSchema(definition.outputSchema),
       }
     })
   }
 
-  private compileSchema(
+  private compileValidationSchema(
     schema?: Record<string, unknown>
   ): ValidateFunction | undefined {
     return schema ? this.ajv.compile(schema) : undefined
+  }
+
+  private compileSerializationSchema(
+    schema?: Record<string, unknown>
+  ): StringifyFn | undefined {
+    return schema ? fastJson(schema) : undefined
   }
 }

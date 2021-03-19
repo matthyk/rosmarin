@@ -6,7 +6,7 @@ import { Route } from './route'
 export interface PutRouteDefinition {
   path?: string
   schema?: Schemas<Record<string, unknown>>
-  outputSchema?: Schemas<Record<string, unknown>>
+  outputSchema?: Record<string, unknown>
   consumes?: string[]
   produces?: string[]
 }

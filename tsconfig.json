@@ -9,11 +9,14 @@
     "sourceMap": true,
     "outDir": "./dist",
     "types": [
-      "jest", "reflect-metadata"
+      "jest",
+      "reflect-metadata",
+      "fastify"
     ],
     "typeRoots": [
       "./node_modules/@types",
-      "./__test__/@types"
+      "./__test__/@types",
+      "./src/@types"
     ],
     "strict": true,
     "noImplicitAny": true,

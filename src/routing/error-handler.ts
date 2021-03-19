@@ -1,7 +1,13 @@
 import { FastifyReply, FastifyRequest } from 'fastify'
-import { CacheControl } from './cache-control'
+import { CacheControl } from '../api/caching/cache-control'
 
-const errorCacheControl: string = new CacheControl().noCache.noStore.toString()
+const errorCacheControl: CacheControl = new CacheControl()
+errorCacheControl.noCache = true
+errorCacheControl.noStore = true
+errorCacheControl.noTransform = true
+
+const errorCacheControlString: string = errorCacheControl.toString()
+
 const defaultError = {
   statusCode: 500,
   error: 'Internal Server Error',
@@ -15,7 +21,10 @@ const errorHandler = (
 ): void => {
   if (error.code === 'FST_ERR_CTP_INVALID_MEDIA_TYPE') {
     delete error.code
-    reply.header('Cache-Control', errorCacheControl).status(415).send(error)
+    reply
+      .header('Cache-Control', errorCacheControlString)
+      .status(415)
+      .send(error)
     return
   }
 
@@ -24,7 +33,7 @@ const errorHandler = (
   )
 
   reply
-    .header('Cache-Control', errorCacheControl)
+    .header('Cache-Control', errorCacheControlString)
     .header('Content-Type', 'application/vnd.error+json')
     .status(500)
     .send(defaultError)

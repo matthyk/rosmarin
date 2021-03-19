@@ -1,20 +1,14 @@
+import { FastifyReply } from 'fastify'
+import { IError } from '../error-interface'
+import { CacheControl } from '../api/caching/cache-control'
+
+export type Header = number | string | string[] | undefined
+
 export class HttpResponse {
-  private _statusCode: number
   private _entity: unknown | undefined
-  private _headers: Record<string, string[]> = {}
+  private _isError = false
 
-  private constructor(statusCode: number, entity?: unknown) {
-    this._statusCode = statusCode
-    this._entity = entity
-  }
-
-  public get statusCode(): number {
-    return this._statusCode
-  }
-
-  public set statusCode(value: number) {
-    this._statusCode = value
-  }
+  public constructor(private readonly reply: FastifyReply) {}
 
   public get entity(): unknown | undefined {
     return this._entity
@@ -24,63 +18,149 @@ export class HttpResponse {
     this._entity = entity
   }
 
-  public get headers(): Record<string, string[]> {
-    return this._headers
+  public get isError(): boolean {
+    return this._isError
   }
 
-  public set headers(value: Record<string, string[]>) {
-    this._headers = value
+  public get headers(): Record<string, Header> {
+    return this.reply.getHeaders()
   }
 
-  public static ok(entity?: unknown): HttpResponse {
-    return new HttpResponse(200, entity)
+  public set headers(value: Record<string, Header>) {
+    this.reply.headers(value)
   }
 
-  public static created(entity?: unknown): HttpResponse {
-    return new HttpResponse(201, entity)
+  public ok(entity?: unknown): HttpResponse {
+    if (entity) this.entity = entity
+    this.reply.code(200)
+    return this
   }
 
-  public static noContent(): HttpResponse {
-    return new HttpResponse(201)
+  public created(entity?: unknown): HttpResponse {
+    if (entity) this.entity = entity
+    this.reply.code(201)
+    return this
   }
 
-  public static notModified(): HttpResponse {
-    return new HttpResponse(304)
+  public noContent(): HttpResponse {
+    this.reply.code(204)
+    this.entity = undefined
+    return this
   }
 
-  public static badRequest(error?: unknown): HttpResponse {
-    return new HttpResponse(400, error)
+  public notModified(): HttpResponse {
+    this.reply.code(304)
+    this.entity = undefined
+    return this
   }
 
-  public static unauthorized(error?: unknown): HttpResponse {
-    return new HttpResponse(401, error)
+  public badRequest(errorMsg: string, code?: string | number): HttpResponse {
+    return this.error({
+      status: 400,
+      message: errorMsg,
+      code: code,
+      error: 'Bad Request',
+    })
   }
 
-  public static forbidden(error?: unknown): HttpResponse {
-    return new HttpResponse(403, error)
+  public unauthorized(errorMsg: string, code?: string | number): HttpResponse {
+    return this.error({
+      status: 401,
+      message: errorMsg,
+      code: code,
+      error: 'Unauthorized',
+    })
   }
 
-  public static notFound(error?: unknown): HttpResponse {
-    return new HttpResponse(404, error)
+  public forbidden(errorMsg: string, code?: string | number): HttpResponse {
+    return this.error({
+      status: 403,
+      message: errorMsg,
+      code: code,
+      error: 'Forbidden',
+    })
   }
 
-  public static notAcceptable(error?: unknown): HttpResponse {
-    return new HttpResponse(406, error)
+  public notFound(errorMsg: string, code?: string | number): HttpResponse {
+    return this.error({
+      status: 404,
+      message: errorMsg,
+      code: code,
+      error: 'Not Found',
+    })
   }
 
-  public static unsupportedMediaType(error?: unknown): HttpResponse {
-    return new HttpResponse(415, error)
+  public notAcceptable(errorMsg: string, code?: string | number): HttpResponse {
+    return this.error({
+      status: 406,
+      message: errorMsg,
+      code: code,
+      error: 'Not Acceptable',
+    })
   }
 
-  public header(key: string, value: string): HttpResponse {
-    key in this._headers
-      ? this._headers[key].push(value)
-      : (this._headers[key] = [value])
+  public unsupportedMediaType(
+    errorMsg: string,
+    code?: string | number
+  ): HttpResponse {
+    return this.error({
+      status: 415,
+      message: errorMsg,
+      code: code,
+      error: 'Unsupported Media Type',
+    })
+  }
+
+  public internalServerError(
+    errorMsg = 'An unexpected error occurred.',
+    code?: string | number
+  ): HttpResponse {
+    return this.error({
+      status: 500,
+      message: errorMsg,
+      code: code,
+      error: 'Internal Server Error',
+    })
+  }
+
+  private error(error: IError): HttpResponse {
+    this._isError = true
+    this.entity = error
+    this.reply.code(error.status)
     return this
   }
 
   public link(link: string): HttpResponse {
-    this.header('Link', link)
+    const linkHeaders: string | string[] = this.reply.getHeader('link') ?? []
+
+    if (Array.isArray(linkHeaders)) {
+      linkHeaders.push(link)
+      this.reply.header('link', linkHeaders)
+      return this
+    }
+
+    this.reply.header('link', [linkHeaders, link])
+
+    return this
+  }
+
+  public header(key: string, value: Header): HttpResponse {
+    this.reply.header(key, value)
+    return this
+  }
+
+  public cacheControl(cacheControl: CacheControl): HttpResponse {
+    this.header('Cache-Control', cacheControl.toString())
+    return this
+  }
+
+  public lastModified(date: Date): HttpResponse {
+    this.header('Last-Modified', date.toUTCString())
+    return this
+  }
+
+  public etag(etag: string): HttpResponse {
+    this.header('Etag', etag)
     return this
   }
 }

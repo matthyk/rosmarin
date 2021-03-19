@@ -16,22 +16,29 @@
   "keywords": [
     "REST",
     "Hypermedia",
-    "HATEOAS"
+    "HATEOAS",
+    "HTTP"
   ],
   "author": "Matthias Keckl",
   "license": "MIT",
   "dependencies": {
+    "etag": "^1.8.1",
     "fastify": "^3.14.0",
     "negotiator": "^0.6.2",
-    "reflect-metadata": "^0.1.13"
+    "reflect-metadata": "^0.1.13",
+    "tsyringe": "^4.4.0"
   },
   "devDependencies": {
+    "@types/benchmark": "^2.1.0",
+    "@types/etag": "^1.8.0",
     "@types/jest": "^26.0.20",
     "@types/negotiator": "^0.6.1",
     "@types/node": "^14.14.31",
     "@types/pino": "^6.3.6",
     "@typescript-eslint/eslint-plugin": "^4.16.1",
     "@typescript-eslint/parser": "^4.16.1",
+    "benchmark": "^2.1.4",
+    "class-transformer": "^0.4.0",
     "eslint": "^7.21.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-import": "^2.22.1",

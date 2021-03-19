@@ -14,8 +14,11 @@ describe('Router decorators', () => {
       httpMethod: 'GET',
       path: '/users',
     })
-    public async get(_req: FastifyRequest): Promise<HttpResponse> {
-      return HttpResponse.ok()
+    public async get(
+      _req: FastifyRequest,
+      response: HttpResponse
+    ): Promise<HttpResponse> {
+      return response.ok()
     }
 
     @Route({
@@ -35,8 +38,11 @@ describe('Router decorators', () => {
         },
       },
     })
-    public async post(_req: FastifyRequest): Promise<HttpResponse> {
-      return HttpResponse.ok()
+    public async post(
+      _req: FastifyRequest,
+      response: HttpResponse
+    ): Promise<HttpResponse> {
+      return response.ok()
     }
   }
 

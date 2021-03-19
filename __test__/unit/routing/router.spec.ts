@@ -9,7 +9,6 @@ import { Route } from '../../../src/routing/decorators/route'
 
 const logger: Logger = Pino()
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
 const mockHandler = (_req: FastifyRequest, _reply: FastifyReply) => {}
 
 describe('router', () => {
@@ -24,8 +23,11 @@ describe('router', () => {
       path: '/test',
       httpMethod: 'GET',
     })
-    public async test(_req: FastifyRequest): Promise<HttpResponse> {
-      return HttpResponse.ok()
+    public async test(
+      _req: FastifyRequest,
+      response: HttpResponse
+    ): Promise<HttpResponse> {
+      return response.ok()
     }
   }
 
@@ -36,8 +38,11 @@ describe('router', () => {
         path: '/test/',
         httpMethod: 'GET',
       })
-      public async test(_req: FastifyRequest): Promise<HttpResponse> {
-        return HttpResponse.ok()
+      public async test(
+        _req: FastifyRequest,
+        response: HttpResponse
+      ): Promise<HttpResponse> {
+        return response.ok()
       }
     }
 
@@ -47,16 +52,22 @@ describe('router', () => {
         path: '/',
         httpMethod: 'POST',
       })
-      public async test1(_req: FastifyRequest): Promise<HttpResponse> {
-        return HttpResponse.ok()
+      public async test1(
+        _req: FastifyRequest,
+        response: HttpResponse
+      ): Promise<HttpResponse> {
+        return response.ok()
       }
 
       @Route({
         path: '/:id',
         httpMethod: 'GET',
       })
-      public async test2(_req: FastifyRequest): Promise<HttpResponse> {
-        return HttpResponse.ok()
+      public async test2(
+        _req: FastifyRequest,
+        response: HttpResponse
+      ): Promise<HttpResponse> {
+        return response.ok()
       }
     }
 
@@ -66,16 +77,22 @@ describe('router', () => {
         path: '/',
         httpMethod: 'GET',
       })
-      public async test1(_req: FastifyRequest): Promise<HttpResponse> {
-        return HttpResponse.ok()
+      public async test1(
+        _req: FastifyRequest,
+        response: HttpResponse
+      ): Promise<HttpResponse> {
+        return response.ok()
       }
 
       @Route({
         path: '/',
         httpMethod: 'GET',
       })
-      public async test2(_req: FastifyRequest): Promise<HttpResponse> {
-        return HttpResponse.ok()
+      public async test2(
+        _req: FastifyRequest,
+        response: HttpResponse
+      ): Promise<HttpResponse> {
+        return response.ok()
       }
     }
 
@@ -85,16 +102,22 @@ describe('router', () => {
         path: '/test/',
         httpMethod: 'GET',
       })
-      public async test1(_req: FastifyRequest): Promise<HttpResponse> {
-        return HttpResponse.ok()
+      public async test1(
+        _req: FastifyRequest,
+        response: HttpResponse
+      ): Promise<HttpResponse> {
+        return response.ok()
       }
 
       @Route({
         path: '/test',
         httpMethod: 'GET',
       })
-      public async test2(_req: FastifyRequest): Promise<HttpResponse> {
-        return HttpResponse.ok()
+      public async test2(
+        _req: FastifyRequest,
+        response: HttpResponse
+      ): Promise<HttpResponse> {
+        return response.ok()
       }
     }
 
@@ -209,8 +232,11 @@ describe('router', () => {
         produces: ['application/json'],
         httpMethod: 'GET',
       })
-      public async getUser(_req: FastifyRequest): Promise<HttpResponse> {
-        return HttpResponse.ok()
+      public async getUser(
+        _req: FastifyRequest,
+        response: HttpResponse
+      ): Promise<HttpResponse> {
+        return response.ok()
       }
 
       @Route({
@@ -218,8 +244,11 @@ describe('router', () => {
         produces: ['application/xml'],
         httpMethod: 'GET',
       })
-      public async getUserAsXml(_req: FastifyRequest): Promise<HttpResponse> {
-        return HttpResponse.ok()
+      public async getUserAsXml(
+        _req: FastifyRequest,
+        response: HttpResponse
+      ): Promise<HttpResponse> {
+        return response.ok()
       }
     }
 
@@ -229,16 +258,22 @@ describe('router', () => {
         path: '/:id',
         httpMethod: 'GET',
       })
-      public async getBook(_req: FastifyRequest): Promise<HttpResponse> {
-        return HttpResponse.ok()
+      public async getBook(
+        _req: FastifyRequest,
+        response: HttpResponse
+      ): Promise<HttpResponse> {
+        return response.ok()
       }
 
       @Route({
         path: '',
         httpMethod: 'GET',
       })
-      public async getAllBooks(_req: FastifyRequest): Promise<HttpResponse> {
-        return HttpResponse.ok()
+      public async getAllBooks(
+        _req: FastifyRequest,
+        response: HttpResponse
+      ): Promise<HttpResponse> {
+        return response.ok()
       }
     }
 
