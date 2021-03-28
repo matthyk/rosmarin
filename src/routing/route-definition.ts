@@ -1,10 +1,11 @@
 import { HttpMethod } from './http-method'
 import { ValidateFunction } from 'ajv'
 import { StringifyFn } from './utility-types'
+import { Schema } from 'fast-json-stringify'
 
 export interface BaseRouteDefinition {
-  produces?: string[]
-  consumes?: string[]
+  produces?: string
+  consumes?: string
   method: string | symbol
 }
 
@@ -19,12 +20,10 @@ export interface RouteDefinition extends BaseRouteDefinition {
   path?: string
   httpMethod: HttpMethod
   schema?: Schemas<Record<string, unknown>>
-  outputSchema?: Record<string, unknown>
+  outputSchema?: Schema
 }
 
 export interface RouteDefinitionWithValidationFn extends BaseRouteDefinition {
   validationFns?: Schemas<ValidateFunction>
   stringifyFn?: StringifyFn
 }
-
-export type test = RouteDefinition & BaseRouteDefinition & { id: number }

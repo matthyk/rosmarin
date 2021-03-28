@@ -22,4 +22,4 @@ export type RouteStore = Record<string, Record<HttpMethod, RouteDefinition[]>>
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type Target = Object
 
-export type StringifyFn = (json: unknown) => string
+export type StringifyFn = (json: any) => string

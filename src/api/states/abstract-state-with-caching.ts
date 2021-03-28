@@ -6,15 +6,15 @@ import { CacheControl } from '../../routing'
 import { createEtag } from '../caching/etag-generator'
 
 export abstract class AbstractStateWithCaching extends AbstractState {
-  private _cachingType: CachingType
+  protected _cachingType: CachingType
 
   protected cacheControlConfigurationSet: Set<CacheControlConfiguration>
 
-  private _maxAgeInSeconds = 0
+  protected _maxAgeInSeconds = 0
 
-  private _sMaxAgeInSeconds = 0
+  protected _sMaxAgeInSeconds = 0
 
-  private _modelForCaching: AbstractModel
+  protected _modelForCaching: AbstractModel
 
   protected constructor() {
     super()
@@ -76,18 +76,22 @@ export abstract class AbstractStateWithCaching extends AbstractState {
 
   protected defineHttpCaching(): void {
     switch (this._cachingType) {
-      case CachingType.VALIDATION_ETAG: {
-        break
-      }
-      case CachingType.VALIDATION_TIMESTAMP: {
+      case CachingType.DEACTIVATE_CACHE: {
+        this.defineHttpCachingByDeactivatingCache()
         break
       }
       case CachingType.EXPIRES_TIME: {
         this.defineHttpCacheControl()
         break
       }
-      case CachingType.DEACTIVATE_CACHE: {
-        this.defineHttpCachingByDeactivatingCache()
+      case CachingType.VALIDATION_ETAG: {
+        this.defineHttpCacheControl()
+        this.defineHttpCachingByEtag()
+        break
+      }
+      case CachingType.VALIDATION_TIMESTAMP: {
+        this.defineHttpCacheControl()
+        this.defineHttpCachingByValidationTimeStamp()
         break
       }
     }

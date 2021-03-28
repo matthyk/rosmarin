@@ -14,6 +14,8 @@ import { AuthenticationInfoProvider } from '../security/authentication-info-prov
 import { ApiKeyInfoProvider } from '../apiKey/api-key-info-provider'
 import { AuthenticationInfoTokenToRespond } from '../security/authentication-info-token-to-respond'
 import { buildLink } from './hyperlinks'
+import { AbstractModel } from '../abstract-model'
+import { convertLinks } from '../views/link-converter'
 
 // noinspection JSMethodCanBeStatic
 export abstract class AbstractState {
@@ -340,5 +342,9 @@ export abstract class AbstractState {
     const apiKeyInfo: ApiKeyInfo = await this.getApiKeInfo(this._apiKeyHeader)
 
     return apiKeyInfo.isValid()
+  }
+
+  protected convertModelToView(model: AbstractModel): AbstractModel {
+    return convertLinks(model, this._req.baseUrl)
   }
 }

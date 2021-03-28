@@ -11,7 +11,8 @@
     "lint:fix": "eslint --fix \"src/**/*.ts\" \"__test__/**/*.spec.ts\" \"./*.ts\"",
     "build": "tsc --project tsconfig.build.json",
     "clean": "rimraf dist",
-    "dev": "npm run build && node dist/index.js"
+    "dev": "npm run clean && npm run build && node dist/user-example.js",
+    "convert": "ts-node src/api/views/view-merger.ts"
   },
   "keywords": [
     "REST",
@@ -23,7 +24,8 @@
   "license": "MIT",
   "dependencies": {
     "etag": "^1.8.1",
-    "fastify": "^3.14.0",
+    "fastify": "^3.14.1",
+    "jsonwebtoken": "^8.5.1",
     "negotiator": "^0.6.2",
     "reflect-metadata": "^0.1.13",
     "tsyringe": "^4.4.0"
@@ -32,6 +34,7 @@
     "@types/benchmark": "^2.1.0",
     "@types/etag": "^1.8.0",
     "@types/jest": "^26.0.20",
+    "@types/jsonwebtoken": "^8.5.1",
     "@types/negotiator": "^0.6.1",
     "@types/node": "^14.14.31",
     "@types/pino": "^6.3.6",

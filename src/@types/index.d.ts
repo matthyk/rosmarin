@@ -5,5 +5,7 @@ declare module 'fastify' {
     baseUrl: string
     fullUrl: string
     acceptedMediaType: string
+
+    evaluatePreconditions(lastModifiedAt: number | Date, etag: string): boolean
   }
 }

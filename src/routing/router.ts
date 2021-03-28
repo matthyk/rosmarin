@@ -1,33 +1,24 @@
-import fastify, {
-  AddContentTypeParser,
-  FastifyInstance,
-  FastifyReply,
-  FastifyRequest,
-} from 'fastify'
-import { Constructor, RouteStore, StringifyFn } from './utility-types'
+import fastify, { AddContentTypeParser, FastifyInstance } from 'fastify'
+import { Constructor, RouteStore } from './utility-types'
 import { HttpMethod } from './http-method'
 import { Logger } from 'pino'
 import {
   RouteDefinition,
   RouteDefinitionWithValidationFn,
-  Schemas,
 } from './route-definition'
 import constants from './constants'
-import { errorCacheControl, errorHandler } from './error-handler'
-import { RouteHandlerMethod } from 'fastify/types/route'
-import { ContentNegotiator, NegotiationResult } from './content-negotiator'
-import { HttpResponse } from './http-response'
-import { RoutingError } from './routing-error'
-import Ajv, { ValidateFunction } from 'ajv'
+import { errorHandler } from './error-handler'
 import { RouterConfig } from './router-config'
-import fastJson from 'fast-json-stringify'
 import { container } from 'tsyringe'
-import { serializeErrorResponse } from './serialization'
+import { createSerializationFn } from './serialization'
+import ajv, { compileValidationSchema } from './validation'
+import { createRouteHandler } from './route-handler'
+import { evaluateConditionalRequest } from './conditional-request-evaluation'
+import { RouteHandlerMethod } from 'fastify/types/route'
 
 export class Router {
   private readonly fastify: FastifyInstance
   private readonly logger: Logger
-  private readonly ajv
 
   constructor(
     logger: Logger,
@@ -39,42 +30,34 @@ export class Router {
       ignoreTrailingSlash: true,
       onProtoPoisoning: 'error',
       onConstructorPoisoning: 'error',
-      disableRequestLogging: false,
+      disableRequestLogging: routerConfig.disableRequestLogging ?? true,
       logger,
     })
 
+    // TODO: fix
     this.addContentType = this.fastify.addContentTypeParser.bind(this.fastify)
-
-    this.ajv = new Ajv({
-      removeAdditional: true,
-      useDefaults: true,
-      coerceTypes: true,
-      nullable: true,
-    })
   }
 
-  private configureFastify(): void {
-    this.fastify.setErrorHandler(errorHandler)
-
-    this.fastify.addContentTypeParser(
+  private configureFastify(fastify: FastifyInstance): void {
+    fastify.addContentTypeParser<string>(
       /\+json$/,
-      // See https://github.com/fastify/fastify/issues/2930
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      this.fastify.getDefaultJsonParser('error', 'error')
+      { parseAs: 'string' },
+      fastify.defaultTextParser
     )
 
-    this.fastify.setValidatorCompiler(({ schema }) => {
-      return this.ajv.compile(schema)
+    fastify.setErrorHandler(errorHandler)
+
+    fastify.setValidatorCompiler(({ schema }) => {
+      return ajv.compile(schema)
     })
 
-    this.fastify.decorateRequest('baseUrl', '')
-    this.fastify.decorateRequest('fullUrl', '')
-    this.fastify.decorateRequest('acceptedMediaType', '')
+    fastify.decorateRequest('baseUrl', '')
+    fastify.decorateRequest('fullUrl', '')
+    fastify.decorateRequest('acceptedMediaType', '')
+    fastify.decorateRequest('evaluatePreconditions', evaluateConditionalRequest)
   }
 
   public async listen(): Promise<void> {
-    this.configureFastify()
     await this.fastify.listen(3000)
   }
 
@@ -87,6 +70,8 @@ export class Router {
         _opts: unknown,
         done: (err?: Error | undefined) => void
       ) => {
+        this.configureFastify(fastify)
+
         controllers.forEach((controller: Constructor) => {
           try {
             this.registerController(controller, fastify)
@@ -94,6 +79,7 @@ export class Router {
             this.logger.error(
               `Error while register controller ${controller.name}.\n${error.stack}`
             )
+            done(error)
           }
         })
         done()
@@ -132,19 +118,30 @@ export class Router {
           definition as RouteDefinition[]
         )
 
-        fastify.route({
-          method: httpMethod as HttpMethod,
-          url: path,
-          handler: this.createRouteHandler(compiledDefinition, instance),
-        })
+        try {
+          const handler: RouteHandlerMethod = createRouteHandler(
+            compiledDefinition,
+            instance
+          )
 
-        this.logger.debug(
-          `Registered { ${httpMethod} ${path} } route${
-            compiledDefinition.length > 1
-              ? ` with ${compiledDefinition.length} different handlers`
-              : ''
-          }.`
-        )
+          fastify.route({
+            method: httpMethod as HttpMethod,
+            url: path,
+            handler,
+          })
+
+          this.logger.debug(
+            `Registered { ${httpMethod} ${path} } route${
+              compiledDefinition.length > 1
+                ? ` with ${compiledDefinition.length} different handlers`
+                : ''
+            }.`
+          )
+        } catch (e) {
+          this.logger.warn(
+            `Registration of route { ${httpMethod} ${path} } failed and will be skipped. ${e.message}`
+          )
+        }
       }
     }
   }
@@ -197,109 +194,6 @@ export class Router {
     )
   }
 
-  private createRouteHandler(
-    routeDefinitions: RouteDefinitionWithValidationFn[],
-    controller: any
-  ): RouteHandlerMethod {
-    const contentNegotiator: ContentNegotiator = new ContentNegotiator(
-      routeDefinitions
-    )
-
-    return async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
-      try {
-        const negotiationResult: NegotiationResult = contentNegotiator.retrieveHandler(
-          req.headers.accept,
-          req.headers['content-type']
-        )
-
-        this.validateRequest(
-          req,
-          negotiationResult.routeDefinition.validationFns
-        )
-
-        req.fullUrl = req.protocol + '://' + req.hostname + req.url
-        req.baseUrl = req.protocol + '://' + req.hostname
-        req.acceptedMediaType = negotiationResult.acceptedMediaType
-
-        const httpResponse: HttpResponse = new HttpResponse(reply)
-
-        const response: HttpResponse = await controller[
-          negotiationResult.routeDefinition.method
-        ](req, httpResponse)
-
-        if (response.isError) {
-          reply
-            .serializer(serializeErrorResponse)
-            .type('application/vnd.error+json')
-            .send(response.entity)
-        } else {
-          if (negotiationResult.routeDefinition.stringifyFn)
-            reply.serializer(negotiationResult.routeDefinition.stringifyFn)
-
-          reply
-            .type(negotiationResult.acceptedMediaType ?? 'application/json')
-            .send(response.entity ? response.entity : undefined)
-        }
-      } catch (e: unknown) {
-        if (e instanceof RoutingError) {
-          reply
-            .header('Cache-Control', errorCacheControl)
-            .status(e.status)
-            .send(e.toJSON())
-        } else {
-          errorHandler(e, req, reply)
-        }
-      }
-    }
-  }
-
-  private validateRequest(
-    req: FastifyRequest,
-    validationFns: Schemas<ValidateFunction>
-  ): void {
-    // TODO: create user friendly error messages
-
-    if (validationFns.body) {
-      const valid = validationFns.body(req.body)
-      if (!valid)
-        throw new RoutingError(
-          400,
-          'Unprocessable Entity',
-          'Validation of request body failed.'
-        ) //TODO: 400 or 422?
-    }
-
-    if (validationFns.query) {
-      const valid = validationFns.query(req.query)
-      if (!valid)
-        throw new RoutingError(
-          400,
-          'Unprocessable Entity',
-          'Validation of request query parameters failed.'
-        )
-    }
-
-    if (validationFns.params) {
-      const valid = validationFns.params(req.params)
-      if (!valid)
-        throw new RoutingError(
-          400,
-          'Unprocessable Entity',
-          'Validation of request path parameters failed.'
-        )
-    }
-
-    if (validationFns.headers) {
-      const valid = validationFns.headers(req.headers)
-      if (!valid)
-        throw new RoutingError(
-          400,
-          'Unprocessable Entity',
-          'Validation of request headers failed.'
-        )
-    }
-  }
-
   private compileRouteDefinitions = (
     definitions: RouteDefinition[]
   ): RouteDefinitionWithValidationFn[] => {
@@ -309,25 +203,13 @@ export class Router {
         consumes: definition.consumes,
         method: definition.method,
         validationFns: {
-          body: this.compileValidationSchema(definition.schema?.body),
-          query: this.compileValidationSchema(definition.schema?.query),
-          headers: this.compileValidationSchema(definition.schema?.headers),
-          params: this.compileValidationSchema(definition.schema?.params),
+          body: compileValidationSchema(definition.schema?.body),
+          query: compileValidationSchema(definition.schema?.query),
+          headers: compileValidationSchema(definition.schema?.headers),
+          params: compileValidationSchema(definition.schema?.params),
         },
-        stringifyFn: this.compileSerializationSchema(definition.outputSchema),
+        stringifyFn: createSerializationFn(definition.outputSchema),
       }
     })
-  }
-
-  private compileValidationSchema(
-    schema?: Record<string, unknown>
-  ): ValidateFunction | undefined {
-    return schema ? this.ajv.compile(schema) : undefined
-  }
-
-  private compileSerializationSchema(
-    schema?: Record<string, unknown>
-  ): StringifyFn | undefined {
-    return schema ? fastJson(schema) : undefined
   }
 }

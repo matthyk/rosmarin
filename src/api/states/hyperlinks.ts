@@ -22,7 +22,9 @@ export const buildLink = (
   let link = uriTemplate
   if (params?.length > 0) {
     let counter = 0
-    link = uriTemplate.replace(/{}/g, (_: string) => String(params[counter++]))
+    link = uriTemplate.replace(/\{.*?\}/g, (_: string) =>
+      String(params[counter++])
+    )
   }
   return linkHeader(link, relType, mediaTypeOrParams as string)
 }

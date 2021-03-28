@@ -1,6 +1,7 @@
 import { RouteGenericInterface } from 'fastify/types/route'
 import { ReturnsHttpResponse, TypedMethodDecorator } from '../utility-types'
 import { Route } from './route'
+import { Schema } from 'fast-json-stringify'
 
 /**
  * There should be no validation schema defined for GET requests, because the request payload should be ignored anyway.
@@ -8,11 +9,11 @@ import { Route } from './route'
  */
 export interface GetRouteDefinition {
   path?: string
-  outputSchema?: Record<string, unknown>
-  produces?: string[]
+  outputSchema?: Schema
+  produces: string
 }
 
-export const Get = <
+export const  Get = <
   RouteGeneric extends RouteGenericInterface = RouteGenericInterface
 >(
   routeDefinition: GetRouteDefinition

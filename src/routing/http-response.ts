@@ -8,7 +8,9 @@ export class HttpResponse {
   private _entity: unknown | undefined
   private _isError = false
 
-  public constructor(private readonly reply: FastifyReply) {}
+  public constructor(private readonly reply: FastifyReply) {
+    this.reply.status(200)
+  }
 
   public get entity(): unknown | undefined {
     return this._entity
@@ -63,7 +65,10 @@ export class HttpResponse {
     })
   }
 
-  public unauthorized(errorMsg: string, code?: string | number): HttpResponse {
+  public unauthorized(
+    errorMsg: string = 'Not authorized.',
+    code?: string | number
+  ): HttpResponse {
     return this.error({
       status: 401,
       message: errorMsg,
@@ -72,7 +77,10 @@ export class HttpResponse {
     })
   }
 
-  public forbidden(errorMsg: string, code?: string | number): HttpResponse {
+  public forbidden(
+    errorMsg: string = 'You have no power here!',
+    code?: string | number
+  ): HttpResponse {
     return this.error({
       status: 403,
       message: errorMsg,
@@ -81,7 +89,10 @@ export class HttpResponse {
     })
   }
 
-  public notFound(errorMsg: string, code?: string | number): HttpResponse {
+  public notFound(
+    errorMsg: string = 'This resource does not exist.',
+    code?: string | number
+  ): HttpResponse {
     return this.error({
       status: 404,
       message: errorMsg,
@@ -96,6 +107,18 @@ export class HttpResponse {
       message: errorMsg,
       code: code,
       error: 'Not Acceptable',
+    })
+  }
+
+  public preconditionFailed(
+    errorMsg: string = '',
+    code?: string | number
+  ): HttpResponse {
+    return this.error({
+      status: 412,
+      message: errorMsg,
+      code: code,
+      error: 'Precondition Failed',
     })
   }
 
@@ -120,6 +143,24 @@ export class HttpResponse {
       message: errorMsg,
       code: code,
       error: 'Internal Server Error',
+    })
+  }
+
+  /**
+   *
+   * some helper methods for common HTTP errors
+   *
+   */
+
+  public apiKeyRequired(
+    errorMsg: string = 'API key required.',
+    code: string | number = 100
+  ): HttpResponse {
+    return this.error({
+      status: 401,
+      message: errorMsg,
+      code: code,
+      error: 'Unauthorized',
     })
   }
 
@@ -161,6 +202,11 @@ export class HttpResponse {
 
   public etag(etag: string): HttpResponse {
     this.header('Etag', etag)
+    return this
+  }
+
+  public location(location: string): HttpResponse {
+    this.header('Location', location)
     return this
   }
 }

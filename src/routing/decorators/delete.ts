@@ -1,6 +1,7 @@
 import { RouteGenericInterface } from 'fastify/types/route'
 import { ReturnsHttpResponse, TypedMethodDecorator } from '../utility-types'
 import { Route } from './route'
+import { Schema } from 'fast-json-stringify'
 
 /**
  * There should be no validation schema defined for DELETE requests, because the request payload should be ignored anyway.
@@ -8,8 +9,8 @@ import { Route } from './route'
  */
 export interface DeleteRouteDefinition {
   path?: string
-  outputSchema?: Record<string, unknown>
-  produces?: string[]
+  outputSchema?: Schema
+  produces?: string
 }
 
 export const Delete = <

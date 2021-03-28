@@ -5,8 +5,8 @@ import { Route } from './route'
 
 export interface PostRouteDefinition {
   path?: string
-  schema?: Schemas<Record<string, unknown>>
-  consumes?: string[]
+  schema: Schemas<Record<string, unknown>>
+  consumes: string
 }
 
 export const Post = <

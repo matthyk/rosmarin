@@ -2,13 +2,14 @@ import { Schemas } from '../route-definition'
 import { RouteGenericInterface } from 'fastify/types/route'
 import { ReturnsHttpResponse, TypedMethodDecorator } from '../utility-types'
 import { Route } from './route'
+import { Schema } from 'fast-json-stringify'
 
 export interface PutRouteDefinition {
   path?: string
   schema?: Schemas<Record<string, unknown>>
-  outputSchema?: Record<string, unknown>
-  consumes?: string[]
-  produces?: string[]
+  outputSchema?: Schema
+  consumes: string
+  produces?: string
 }
 
 export const Put = <

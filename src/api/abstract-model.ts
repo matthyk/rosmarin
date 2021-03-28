@@ -1,5 +1,12 @@
-export abstract class AbstractModel<T extends string | number = number> {
-  public id: T
+import { ModelId } from './types'
+
+export abstract class AbstractModel {
+
+  protected constructor(id: ModelId) {
+    this.id = id;
+  }
+
+  public id: ModelId
 
   public lastModifiedAt: number
 }

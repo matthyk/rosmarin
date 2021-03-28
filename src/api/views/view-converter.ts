@@ -1,6 +1,7 @@
-import 'reflect-metadata'
 import { Constructor, Target } from '../../routing/utility-types'
-import constants from './constants'
+import constants from '../constants'
+import { AbstractModel } from '../abstract-model'
+import { Link } from '../link'
 
 export const prop = (target: Target, propertyKey: string): void => {
   const props: string[] =
@@ -11,7 +12,12 @@ export const prop = (target: Target, propertyKey: string): void => {
   Reflect.defineMetadata(constants.VIEW_PROPS, props, target.constructor)
 }
 
-export type Converter<From, To = unknown> = (from: From) => To
+export type Converter<From, To = AbstractModel> = (from: From) => To
+
+export type GeneratedConverter<From, To = AbstractModel> = (
+  from: From,
+  to: To
+) => To
 
 export const convertTo = <From, To>(
   to: Constructor<To>
@@ -29,4 +35,77 @@ export const convertTo = <From, To>(
 
     return instance
   }
+}
+
+export const generateConvertTo = <From, To>(
+  convertTo: Constructor<To>
+): Converter<From, To> => {
+  const props: string[] = Reflect.getMetadata(constants.VIEW_PROPS, convertTo)
+
+  let propValues = ''
+  props.forEach((prop) => {
+    propValues += `instance['${prop}'] = from['${prop}']\n`
+  })
+
+  const fn = `
+    'use strict'
+    
+    return (function (from) {
+      const instance = new to()
+      
+      ${propValues}
+      
+      return instance
+      
+     })
+  `
+
+  return Function.apply(null, ['to', fn]).apply(null, [convertTo])
+}
+
+export const generateConvertToWithLinks = <From, To>(
+  from: Constructor<From>,
+  convertTo: Constructor<To>
+) => {
+  const props: string[] = Reflect.getMetadata(constants.VIEW_PROPS, convertTo)
+  console.log('#########################')
+  const links: (Link & { property: string | symbol })[] =
+    Reflect.getMetadata(constants.LINKS, from) ?? []
+
+  let code = ''
+
+  links.forEach((link) => {
+    if (props.includes(link.property.toString()))
+      code += `
+        instance['${link.property.toString()}'] = {
+            rel: '${link.rel}',
+            type: '${link.type}',
+            href: baseUrl + '${
+              link.href
+            }'.replace(/{.*?}/g, function(substring) {
+              return from[substring.substring(1, substring.length - 1)]
+            })
+          }\n
+      `
+  })
+
+  props.forEach((prop) => {
+    if (!links.find((l) => l.property.toString() === prop))
+      code += `instance['${prop}'] = from['${prop}']\n`
+  })
+
+  const fn = `
+    'use strict'
+    
+    return (function (from, baseUrl) {
+      const instance = new to()
+      
+      ${code}
+      
+      return instance
+      
+     })
+  `
+  console.log(fn)
+  return Function.apply(null, ['to', fn]).apply(null, [convertTo])
 }

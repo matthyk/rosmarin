@@ -4,7 +4,6 @@ import { HttpResponse } from '../../../routing/http-response'
 import { SingleModelDatabaseResult } from '../../../database/results/single-model-database-result'
 import { linkHeader } from '../hyperlinks'
 import RelationTypes from '../relation-types'
-import { Converter } from '../../views/view-converter'
 
 export abstract class AbstractGetState<
   T extends AbstractModel
@@ -18,8 +17,6 @@ export abstract class AbstractGetState<
   private _modelForConstraintCheck: AbstractModel
 
   private _requestedModel: SingleModelDatabaseResult<T>
-
-  private _converter: Converter<T>
 
   public get requestedId(): number {
     return this._requestedId
@@ -45,10 +42,6 @@ export abstract class AbstractGetState<
     this._requestedModel = value
   }
 
-  public set converter(value: Converter<T>) {
-    this._converter = value
-  }
-
   protected async buildInternal(): Promise<HttpResponse> {
     this.configureState()
 
@@ -57,7 +50,7 @@ export abstract class AbstractGetState<
     }
 
     if ((await this.verifyRolesOfClient()) === false) {
-      return this.response.unauthorized('You have no power here!')
+      return this.response.forbidden('You have no power here!') // TODO: 401 vs 403?
     }
 
     this._requestedModel = await this.loadModelFromDatabase()
@@ -83,6 +76,8 @@ export abstract class AbstractGetState<
       // TODO: Question: Should links be sent too?
     }
 
+    this.modelForCaching = this.requestedModel.result // TODO: ???
+
     return await this.createResponse()
   }
 
@@ -103,11 +98,7 @@ export abstract class AbstractGetState<
   }
 
   protected defineHttpResponseBody(): void {
-    if (this._converter) {
-      this.response.entity = this._converter(this._requestedModel.result)
-    } else {
-      this.response.entity = this._requestedModel.result
-    }
+    this.response.entity = this.convertModelToView(this._requestedModel.result)
   }
 
   protected abstract defineTransitionLinks(): Promise<void> | void
@@ -116,25 +107,14 @@ export abstract class AbstractGetState<
     SingleModelDatabaseResult<T>
   >
 
-  protected evaluatePreconditions(
-    etag: string,
-    lastModifiedAt: number
-  ): boolean {
-    return (
-      etag === this._req.headers['if-none-match'] ||
-      new Date(this._req.headers['if-modified-since']).getTime() >
-        lastModifiedAt
-    )
-  }
-
   protected clientKnowsCurrentModelState(): boolean {
     const currentEtag: string = this.createEntityTagOfResult(
       this._requestedModel.result
     )
 
-    return this.evaluatePreconditions(
-      currentEtag,
-      this._requestedModel.result.lastModifiedAt
+    return this._req.evaluatePreconditions(
+      this._requestedModel.result.lastModifiedAt,
+      currentEtag
     )
   }
 
