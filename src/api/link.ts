@@ -1,5 +1,5 @@
-import { Target } from '../routing/utility-types'
-import constants from './constants'
+import { Target } from '../router/utility-types'
+import constants from '../constants'
 
 export interface Link {
   href: string

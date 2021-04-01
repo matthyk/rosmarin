@@ -3,6 +3,7 @@
     "target": "es6",
     "module": "commonjs",
     "allowJs": false,
+    "lib": ["dom", "es6", "es7"],
     "checkJs": false,
     "declaration": true,
     "declarationMap": true,

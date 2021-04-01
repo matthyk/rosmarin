@@ -1,3 +1,3 @@
-import { injectable } from 'tsyringe'
+import { autoInjectable } from 'tsyringe'
 
-export const State = (): ReturnType<typeof injectable> => injectable()
+export const State = (): ReturnType<typeof autoInjectable> => autoInjectable()

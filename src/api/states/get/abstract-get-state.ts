@@ -1,9 +1,11 @@
 import { AbstractModel } from '../../abstract-model'
 import { AbstractStateWithCaching } from '../abstract-state-with-caching'
-import { HttpResponse } from '../../../routing/http-response'
+import { HttpResponse } from '../../../router/http-response'
 import { SingleModelDatabaseResult } from '../../../database/results/single-model-database-result'
 import { linkHeader } from '../hyperlinks'
 import RelationTypes from '../relation-types'
+import { ModelId } from '../../types'
+import { FastifyRequest } from 'fastify'
 
 export abstract class AbstractGetState<
   T extends AbstractModel
@@ -12,38 +14,21 @@ export abstract class AbstractGetState<
     super()
   }
 
-  private _requestedId: number
+  protected req: FastifyRequest<{
+    Body: never
+    Params: { id: number | string }
+  }>
 
-  private _modelForConstraintCheck: AbstractModel
+  protected requestedId: ModelId
 
-  private _requestedModel: SingleModelDatabaseResult<T>
+  protected modelForConstraintCheck: AbstractModel
 
-  public get requestedId(): number {
-    return this._requestedId
-  }
-
-  public set requestedId(value: number) {
-    this._requestedId = value
-  }
-
-  public get modelForConstraintCheck(): AbstractModel {
-    return this._modelForConstraintCheck
-  }
-
-  public set modelForConstraintCheck(value: AbstractModel) {
-    this._modelForConstraintCheck = value
-  }
-
-  public get requestedModel(): SingleModelDatabaseResult<T> {
-    return this._requestedModel
-  }
-
-  public set requestedModel(value: SingleModelDatabaseResult<T>) {
-    this._requestedModel = value
-  }
+  protected requestedModel: SingleModelDatabaseResult<T>
 
   protected async buildInternal(): Promise<HttpResponse> {
     this.configureState()
+
+    this.extractFromRequest()
 
     if ((await this.verifyApiKey()) === false) {
       return this.response.unauthorized('API key required.')
@@ -53,18 +38,18 @@ export abstract class AbstractGetState<
       return this.response.forbidden('You have no power here!') // TODO: 401 vs 403?
     }
 
-    this._requestedModel = await this.loadModelFromDatabase()
+    this.requestedModel = await this.loadModelFromDatabase()
 
-    if (this._requestedModel.hasError()) {
+    if (this.requestedModel.hasError()) {
       return this.response.internalServerError()
     }
 
-    if (this._requestedModel.isEmpty()) {
+    if (this.requestedModel.isEmpty()) {
       // TODO provide user the possibility to throw custom error
       return this.response.notFound('This resource does not exist.')
     }
 
-    this._modelForConstraintCheck = this._requestedModel.result
+    this.modelForConstraintCheck = this.requestedModel.result
 
     if ((await this.verifyAllStateEntryConstraints()) === false) {
       return this.response.forbidden('You have no power here!')
@@ -82,11 +67,15 @@ export abstract class AbstractGetState<
   }
 
   protected async createResponse(): Promise<HttpResponse> {
-    this.defineHttpResponseBody()
+    // this.defineHttpResponseBody()
 
-    this.defineModelForCaching(this._requestedModel.result)
+    this.defineModelForCaching(this.requestedModel.result)
 
     this.defineHttpCaching()
+
+    this.defineHttpResponseBody() // We had to change the order here, because the etag value was affected by the generated links
+
+    // this.defineHttpCaching()
 
     this.defineSelfLink()
 
@@ -98,7 +87,7 @@ export abstract class AbstractGetState<
   }
 
   protected defineHttpResponseBody(): void {
-    this.response.entity = this.convertModelToView(this._requestedModel.result)
+    this.response.entity = this.convertModelToView(this.requestedModel.result)
   }
 
   protected abstract defineTransitionLinks(): Promise<void> | void
@@ -107,13 +96,17 @@ export abstract class AbstractGetState<
     SingleModelDatabaseResult<T>
   >
 
+  protected extractFromRequest(): void {
+    this.requestedId = this.req.params.id
+  }
+
   protected clientKnowsCurrentModelState(): boolean {
     const currentEtag: string = this.createEntityTagOfResult(
-      this._requestedModel.result
+      this.requestedModel.result
     )
 
-    return this._req.evaluatePreconditions(
-      this._requestedModel.result.lastModifiedAt,
+    return this.req.evaluateConditionalGetRequest(
+      this.requestedModel.result.lastModifiedAt,
       currentEtag
     )
   }
@@ -121,7 +114,7 @@ export abstract class AbstractGetState<
   protected defineSelfLink(): void {
     this.response.link(
       linkHeader(
-        this._req.fullUrl,
+        this.req.fullUrl(),
         RelationTypes.self,
         this.getAcceptedMediaType()
       )

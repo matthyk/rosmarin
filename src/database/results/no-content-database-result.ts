@@ -1,9 +1,8 @@
 import { AbstractDatabaseResult } from './abstract-database-result'
 
 export class NoContentDatabaseResult extends AbstractDatabaseResult {
-
   constructor() {
-    super();
+    super()
   }
 
   public isEmpty(): boolean {

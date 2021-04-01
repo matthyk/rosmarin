@@ -1,15 +1,15 @@
-import { Constructor, Target } from '../../routing/utility-types'
-import constants from '../constants'
+import { Constructor, Target } from '../../router/utility-types'
 import { AbstractModel } from '../abstract-model'
 import { Link } from '../link'
+import constants from '../../constants'
 
 export const prop = (target: Target, propertyKey: string): void => {
   const props: string[] =
-    Reflect.getMetadata(constants.VIEW_PROPS, target.constructor) ?? []
+    Reflect.getMetadata(constants.VIEW_P, target.constructor) ?? []
 
   props.push(propertyKey)
 
-  Reflect.defineMetadata(constants.VIEW_PROPS, props, target.constructor)
+  Reflect.defineMetadata(constants.VIEW_P, props, target.constructor)
 }
 
 export type Converter<From, To = AbstractModel> = (from: From) => To
@@ -23,7 +23,7 @@ export const convertTo = <From, To>(
   to: Constructor<To>
 ): Converter<From, To> => {
   return (from: From): To => {
-    const props: string[] = Reflect.getMetadata(constants.VIEW_PROPS, to)
+    const props: string[] = Reflect.getMetadata(constants.VIEW_P, to)
 
     const instance = new to()
 
@@ -40,7 +40,7 @@ export const convertTo = <From, To>(
 export const generateConvertTo = <From, To>(
   convertTo: Constructor<To>
 ): Converter<From, To> => {
-  const props: string[] = Reflect.getMetadata(constants.VIEW_PROPS, convertTo)
+  const props: string[] = Reflect.getMetadata(constants.VIEW_P, convertTo)
 
   let propValues = ''
   props.forEach((prop) => {
@@ -67,7 +67,7 @@ export const generateConvertToWithLinks = <From, To>(
   from: Constructor<From>,
   convertTo: Constructor<To>
 ) => {
-  const props: string[] = Reflect.getMetadata(constants.VIEW_PROPS, convertTo)
+  const props: string[] = Reflect.getMetadata(constants.VIEW_P, convertTo)
   console.log('#########################')
   const links: (Link & { property: string | symbol })[] =
     Reflect.getMetadata(constants.LINKS, from) ?? []

@@ -1,6 +1,7 @@
 import { AbstractModel } from '../abstract-model'
 import { LinkProperty } from '../link'
-import constants from '../constants'
+import { Property } from '../../json-schema-builder/view-property'
+import constants from '../../constants'
 
 export const convertLinks = <T extends AbstractModel>(
   instance: T,
@@ -29,6 +30,18 @@ export const convertLinks = <T extends AbstractModel>(
       rel: prop.rel,
     }
   })
+
+  const viewProps: Property[] =
+    Reflect.getMetadata(constants.VIEW_PROPS, instance.constructor) ?? []
+
+  for (const prop of viewProps) {
+    // currently only embedded objects are supported
+    if (prop.type.name !== 'Array') {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      instance[prop.name] = convertLinks(instance[prop.name], url)
+    }
+  }
 
   return instance
 }

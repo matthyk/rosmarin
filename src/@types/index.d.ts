@@ -2,10 +2,20 @@ import { FastifyRequest } from 'fastify'
 
 declare module 'fastify' {
   export interface FastifyRequest {
-    baseUrl: string
-    fullUrl: string
     acceptedMediaType: string
 
-    evaluatePreconditions(lastModifiedAt: number | Date, etag: string): boolean
+    baseUrl(): string
+
+    fullUrl(): string
+
+    evaluateConditionalGetRequest(
+      lastModifiedAt: number | Date,
+      etag: string
+    ): boolean
+
+    evaluateConditionalPutRequest(
+      lastModifiedAt: number | Date,
+      etag: string
+    ): boolean
   }
 }

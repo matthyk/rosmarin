@@ -121,7 +121,7 @@ export class PagingBehaviourUsingOffsetSize implements IPagingBehaviour {
   }
 
   private getSelfUri(req: FastifyRequest): URL {
-    const url: URL = new URL(req.fullUrl)
+    const url: URL = new URL(req.fullUrl())
 
     url.searchParams.set(this.sizeQueryParamName, this.size.toString())
     url.searchParams.set(this.offsetQueryParamName, this.offset.toString())
@@ -138,7 +138,7 @@ export class PagingBehaviourUsingOffsetSize implements IPagingBehaviour {
   }
 
   private getPrevUri(req: FastifyRequest): URL {
-    const url: URL = new URL(req.fullUrl)
+    const url: URL = new URL(req.fullUrl())
 
     url.searchParams.set(
       this.offsetQueryParamName,
@@ -156,7 +156,7 @@ export class PagingBehaviourUsingOffsetSize implements IPagingBehaviour {
     req: FastifyRequest,
     dbResult: CollectionModelDatabaseResult
   ): URL {
-    const url: URL = new URL(req.fullUrl)
+    const url: URL = new URL(req.fullUrl())
 
     url.searchParams.set(
       this.offsetQueryParamName,

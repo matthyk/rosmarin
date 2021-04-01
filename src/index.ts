@@ -1,7 +1,8 @@
+/*
 import 'reflect-metadata'
 import { FastifyRequest } from 'fastify'
-import { Controller, Get, Router } from './routing'
-import { HttpResponse } from './routing/http-response'
+import { Controller, Get, Router } from './router'
+import { HttpResponse } from './router/http-response'
 import Pino, { Logger } from 'pino'
 import { container, injectable } from 'tsyringe'
 import constants from './api/constants'
@@ -12,7 +13,7 @@ import { State } from './api/states/decorator'
 import { AuthenticationInfo } from './api/security/authentication-info'
 import { AuthenticationHeader } from './api/security/authentication-header'
 import { AuthenticationInfoProvider } from './api/security/authentication-info-provider'
-import { NoApiKeyProvider } from './api/apiKey/no-api-key-provider'
+import { NoApiKeyProvider } from './api/api-key/no-api-key-provider'
 import { CachingType } from './api/caching/caching-type'
 import { CacheControlConfiguration } from './api/caching/cache-control-configuration'
 import { Roles } from './api/security/roles'
@@ -65,15 +66,12 @@ class User extends AbstractModel {
   }
 }
 
-class UserView {
+class UserView extends AbstractModel {
   @prop
   name: string
 
   @prop
   password: string
-
-  @prop
-  id: string
 }
 
 @State()
@@ -119,7 +117,7 @@ class UserController {
 
   @Get<{ Params: { id: number } }>({
     path: '/:id',
-    produces: ['application/vnd.user+json'],
+    produces: 'application/vnd.user+json',
   })
   public async getUser(
     req: FastifyRequest<{ Params: { id: number } }>,
@@ -127,7 +125,7 @@ class UserController {
   ): Promise<HttpResponse> {
     this.state.configure(req, response)
     this.state.requestedId = req.params.id
-    this.state.converter = convertTo(UserView)
+    // this.state.converter = convertTo<User, UserView>(UserView)
     return this.state.build()
   }
 }
@@ -139,3 +137,4 @@ class UserController {
 
   await router.listen()
 })()
+*/

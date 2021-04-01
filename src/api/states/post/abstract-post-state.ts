@@ -2,75 +2,48 @@ import { AbstractModel } from '../../abstract-model'
 import { ViewModel } from '../../abstract-view-model'
 import { AbstractState } from '../abstract-state'
 import { NoContentDatabaseResult } from '../../../database/results/no-content-database-result'
-import { HttpResponse } from '../../../routing/http-response'
+import { HttpResponse } from '../../../router/http-response'
+import { merge } from '../../views/view-merger/merge'
+import { FastifyRequest } from 'fastify'
 
 export abstract class AbstractPostState<
   T extends AbstractModel,
   V extends ViewModel
 > extends AbstractState {
-  protected _modelToCreate: V
+  protected modelToCreate: V
 
-  protected _modelToStoreInDatabase: T
+  protected modelToStoreInDatabase: T
 
-  protected _modelForConstraintCheck: AbstractModel
+  protected modelForConstraintCheck: AbstractModel
 
-  protected _dbResultAfterSave: NoContentDatabaseResult
+  protected dbResultAfterSave: NoContentDatabaseResult
 
-
-  public get modelToCreate(): V {
-    return this._modelToCreate;
-  }
-
-  public set modelToCreate(value: V) {
-    this._modelToCreate = value;
-  }
-
-  public get modelToStoreInDatabase(): T {
-    return this._modelToStoreInDatabase;
-  }
-
-  public set modelToStoreInDatabase(value: T) {
-    this._modelToStoreInDatabase = value;
-  }
-
-  public get modelForConstraintCheck(): AbstractModel {
-    return this._modelForConstraintCheck;
-  }
-
-  public set modelForConstraintCheck(value: AbstractModel) {
-    this._modelForConstraintCheck = value;
-  }
-
-  public get dbResultAfterSave(): NoContentDatabaseResult {
-    return this._dbResultAfterSave;
-  }
-
-  public set dbResultAfterSave(value: NoContentDatabaseResult) {
-    this._dbResultAfterSave = value;
-  }
+  protected req: FastifyRequest<{ Body: V }>
 
   protected async buildInternal(): Promise<HttpResponse> {
     this.configureState()
 
+    this.extractFromRequest()
+
     if ((await this.verifyApiKey()) === false) {
-      return this.response.unauthorized( 'API key required.' )
+      return this.response.unauthorized('API key required.')
     }
 
     if ((await this.verifyRolesOfClient()) === false) {
-      return this.response.unauthorized( 'You have no power here!' )
+      return this.response.unauthorized('You have no power here!')
     }
 
-    this._modelForConstraintCheck = this._modelToCreate
+    this.modelForConstraintCheck = this.modelToCreate
 
     if ((await this.verifyAllStateEntryConstraints()) === false) {
-      return this.response.forbidden( 'Forbidden' )
+      return this.response.forbidden('Forbidden')
     }
 
     this.mergeViewModelToDatabaseModel()
 
-    this._dbResultAfterSave = await this.createModelInDatabase()
+    this.dbResultAfterSave = await this.createModelInDatabase()
 
-    if (this._dbResultAfterSave.hasError()) {
+    if (this.dbResultAfterSave.hasError()) {
       return this.response.internalServerError()
     }
 
@@ -85,19 +58,33 @@ export abstract class AbstractPostState<
     return this.response
   }
 
+  protected extractFromRequest(): void {
+    this.modelToCreate = this.req.body
+  }
+
   protected defineLocationLink(): void {
     const locationLink: string =
-      this._req.fullUrl + this._modelToStoreInDatabase.id
-    this.response.location( locationLink )
+      this.req.fullUrl() + this.modelToStoreInDatabase.id
+    this.response.location(locationLink)
     this.response.created()
   }
 
   protected abstract defineTransitionLinks(): Promise<void> | void
 
   private mergeViewModelToDatabaseModel(): void {
-    this._modelToStoreInDatabase = this.createDatabaseModel()
-    // TODO: ViewMerger.merge( this.modelToCreate, this.modelToStoreInDatabase )
-    this._modelToStoreInDatabase.lastModifiedAt = Date.now()
+    this.modelToStoreInDatabase = this.createDatabaseModel()
+    this.modelToStoreInDatabase = this.merge(
+      this.modelToCreate,
+      this.modelToStoreInDatabase
+    )
+    this.modelToStoreInDatabase.lastModifiedAt = Date.now()
+  }
+
+  /**
+   * You should override this method in subclasses if you do not want to use the built-in merge function which requires to annotate the incoming view model
+   */
+  protected merge(source: V, target: T): T {
+    return merge(source, target)
   }
 
   protected abstract createDatabaseModel(): T

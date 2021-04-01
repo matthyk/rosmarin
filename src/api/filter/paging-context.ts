@@ -1,5 +1,5 @@
 import { FastifyRequest } from 'fastify'
-import { HttpResponse } from '../../routing/http-response'
+import { HttpResponse } from '../../router/http-response'
 
 export class PagingContext {
   private readonly _req: FastifyRequest

@@ -1,4 +1,4 @@
-import { Target } from '../../routing/utility-types'
+import { Target } from '../../router/utility-types'
 
 export const property = (
   _config: Record<string, any> = {}

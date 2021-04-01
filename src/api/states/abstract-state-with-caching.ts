@@ -2,43 +2,26 @@ import { AbstractState } from './abstract-state'
 import { CachingType } from '../caching/caching-type'
 import { AbstractModel } from '../abstract-model'
 import { CacheControlConfiguration } from '../caching/cache-control-configuration'
-import { CacheControl } from '../../routing'
+import { CacheControl } from '../../router'
 import { createEtag } from '../caching/etag-generator'
 
 export abstract class AbstractStateWithCaching extends AbstractState {
-  protected _cachingType: CachingType
+  protected cachingType: CachingType
 
   protected cacheControlConfigurationSet: Set<CacheControlConfiguration>
 
-  protected _maxAgeInSeconds = 0
+  private _maxAgeInSeconds = 0
 
-  protected _sMaxAgeInSeconds = 0
+  private _sMaxAgeInSeconds = 0
 
-  protected _modelForCaching: AbstractModel
-
-  protected constructor() {
-    super()
-    this._cachingType = CachingType.DEACTIVATE_CACHE
-    this.cacheControlConfigurationSet = new Set([
-      CacheControlConfiguration.NO_CACHE,
-      CacheControlConfiguration.NO_STORE,
-    ])
-  }
-
-  public get cachingType(): CachingType {
-    return this._cachingType
-  }
-
-  public set cachingType(value: CachingType) {
-    this._cachingType = value
-  }
+  protected modelForCaching: AbstractModel
 
   protected get maxAgeInSeconds(): number {
     return this._maxAgeInSeconds
   }
 
   protected set maxAgeInSeconds(value: number) {
-    this._maxAgeInSeconds = value
+    this._maxAgeInSeconds = value < 0 ? 0 : value
   }
 
   protected get sMaxAgeInSeconds(): number {
@@ -46,26 +29,27 @@ export abstract class AbstractStateWithCaching extends AbstractState {
   }
 
   protected set sMaxAgeInSeconds(value: number) {
-    this._sMaxAgeInSeconds = value
+    this._sMaxAgeInSeconds = value < 0 ? 0 : value
   }
 
-  public get modelForCaching(): AbstractModel {
-    return this._modelForCaching
-  }
-
-  public set modelForCaching(value: AbstractModel) {
-    this._modelForCaching = value
+  protected constructor() {
+    super()
+    this.cachingType = CachingType.DEACTIVATE_CACHE
+    this.cacheControlConfigurationSet = new Set([
+      CacheControlConfiguration.NO_CACHE,
+      CacheControlConfiguration.NO_STORE,
+    ])
   }
 
   protected defineModelForCaching(model: AbstractModel): void {
-    this._modelForCaching = model
+    this.modelForCaching = model
   }
 
   protected setHttpCachingType(
     cachingType: CachingType,
     ...cacheControlConfigurations: CacheControlConfiguration[]
   ): void {
-    this._cachingType = cachingType
+    this.cachingType = cachingType
 
     if (cacheControlConfigurations?.length > 0) {
       this.cacheControlConfigurationSet = new Set<CacheControlConfiguration>(
@@ -75,7 +59,7 @@ export abstract class AbstractStateWithCaching extends AbstractState {
   }
 
   protected defineHttpCaching(): void {
-    switch (this._cachingType) {
+    switch (this.cachingType) {
       case CachingType.DEACTIVATE_CACHE: {
         this.defineHttpCachingByDeactivatingCache()
         break
@@ -105,10 +89,10 @@ export abstract class AbstractStateWithCaching extends AbstractState {
     const cacheControl: CacheControl = new CacheControl()
 
     if (!this.isCacheNoCache() && !this.isCacheNoStore()) {
-      cacheControl.maxAge = this.maxAgeInSeconds
+      cacheControl.maxAge = this._maxAgeInSeconds
 
       if (!this.isCachePrivate()) {
-        cacheControl.sMaxAge = this.sMaxAgeInSeconds
+        cacheControl.sMaxAge = this._sMaxAgeInSeconds
       }
     }
 
@@ -145,7 +129,7 @@ export abstract class AbstractStateWithCaching extends AbstractState {
   }
 
   protected defineHttpCachingByValidationTimeStamp(): void {
-    this.response.lastModified(new Date(this._modelForCaching.lastModifiedAt))
+    this.response.lastModified(new Date(this.modelForCaching.lastModifiedAt))
   }
 
   protected defineHttpCachingByEtag(): void {
@@ -155,6 +139,6 @@ export abstract class AbstractStateWithCaching extends AbstractState {
   protected createEntityTagOfResult(): string
   protected createEntityTagOfResult(model: AbstractModel): string
   protected createEntityTagOfResult(model?: AbstractModel): string {
-    return createEtag(model ?? this._modelForCaching)
+    return createEtag(model ?? this.modelForCaching)
   }
 }

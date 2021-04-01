@@ -1,27 +1,29 @@
 import { FastifyRequest } from 'fastify'
 import { Logger } from 'pino'
 import { container } from 'tsyringe'
-import constants from '../constants'
-import { HttpResponse } from '../../routing/http-response'
+import { HttpResponse } from '../../router/http-response'
 import { AuthenticationInfo } from '../security/authentication-info'
-import { ApiKeyInfo } from '../apiKey/api-key-info'
+import { ApiKeyInfo } from '../api-key/api-key-info'
 import { Constraint } from '../constraints/constraint'
-import { ApiKeyHeader } from '../apiKey/api-key-header'
+import { ApiKeyHeader } from '../api-key/api-key-header'
 import { AuthenticationHeader } from '../security/authentication-header'
 import { StateContext } from '../state-context'
 import { Roles } from '../security/roles'
 import { AuthenticationInfoProvider } from '../security/authentication-info-provider'
-import { ApiKeyInfoProvider } from '../apiKey/api-key-info-provider'
+import { ApiKeyInfoProvider } from '../api-key/api-key-info-provider'
 import { AuthenticationInfoTokenToRespond } from '../security/authentication-info-token-to-respond'
 import { buildLink } from './hyperlinks'
 import { AbstractModel } from '../abstract-model'
 import { convertLinks } from '../views/link-converter'
+import { HttpRequest } from '../../router/http-request'
+import { Configured } from './configured'
+import constants from '../../constants'
 
 // noinspection JSMethodCanBeStatic
 export abstract class AbstractState {
   protected readonly logger: Logger
 
-  protected _req: FastifyRequest
+  protected req: FastifyRequest
 
   protected response: HttpResponse
 
@@ -29,25 +31,25 @@ export abstract class AbstractState {
 
   protected readonly apiKeyInfoProvider: ApiKeyInfoProvider
 
-  protected _apiKeyVerificationActivated = false
+  protected apiKeyVerificationActivated = false
 
-  protected _userAuthenticationActivated = false
+  protected userAuthenticationActivated = false
 
-  protected _stateEntryConstraints: Constraint<this>[] = []
+  protected stateEntryConstraints: Constraint<this>[] = []
 
-  protected _stateContext: StateContext = new StateContext()
+  protected stateContext: StateContext = new StateContext()
 
-  protected _authenticationInfo: AuthenticationInfo
+  protected authenticationInfo: AuthenticationInfo
 
-  protected _allowedRoles = new Roles()
+  protected allowedRoles = new Roles()
 
   /**
    * After method {@link #verifyRolesOfClient()} this object contains information about the user that
    * has sent this request.
    */
-  protected _authInfo: AuthenticationInfo
+  protected authInfo: AuthenticationInfo
 
-  protected _apiKeyHeader: ApiKeyHeader
+  protected apiKeyHeader: ApiKeyHeader
 
   protected constructor() {
     this.logger = container
@@ -63,92 +65,23 @@ export abstract class AbstractState {
     )
   }
 
-  public get req(): FastifyRequest {
-    return this._req
-  }
-
-  public set req(value: FastifyRequest) {
-    this._req = value
-  }
-
-  public get apiKeyVerificationActivated(): boolean {
-    return this._apiKeyVerificationActivated
-  }
-
-  public set apiKeyVerificationActivated(value: boolean) {
-    this._apiKeyVerificationActivated = value
-  }
-
-  public get userAuthenticationActivated(): boolean {
-    return this._userAuthenticationActivated
-  }
-
-  public set userAuthenticationActivated(value: boolean) {
-    this._userAuthenticationActivated = value
-  }
-
-  public get stateEntryConstraints(): Constraint<this>[] {
-    return this._stateEntryConstraints
-  }
-
-  public set stateEntryConstraints(value: Constraint<this>[]) {
-    this._stateEntryConstraints = value
-  }
-
-  public get stateContext(): StateContext {
-    return this._stateContext
-  }
-
-  public set stateContext(value: StateContext) {
-    this._stateContext = value
-  }
-
-  public get authInfo(): AuthenticationInfo {
-    return this._authInfo
-  }
-
-  public set authInfo(value: AuthenticationInfo) {
-    this._authInfo = value
-  }
-
-  public get apiKeyHeader(): ApiKeyHeader {
-    return this._apiKeyHeader
-  }
-
-  public set apiKeyHeader(value: ApiKeyHeader) {
-    this._apiKeyHeader = value
-  }
-
-  public get authenticationInfo(): AuthenticationInfo {
-    return this._authenticationInfo
-  }
-
-  public set authenticationInfo(value: AuthenticationInfo) {
-    this._authenticationInfo = value
-  }
-
-  protected get allowedRoles(): Roles {
-    return this._allowedRoles
-  }
-
-  protected set allowedRoles(value: Roles) {
-    this._allowedRoles = value
-  }
-
-  public configure(req: FastifyRequest, response: HttpResponse): this {
-    this._req = req
+  public configure(
+    req: HttpRequest<any>,
+    response: HttpResponse
+  ): Configured<this> {
+    this.req = req
     this.response = response
-    return this
+    return { state: this }
   }
 
   protected abstract buildInternal(): Promise<HttpResponse>
 
   protected addStateEntryConstraint(constraint: Constraint<this>): void {
-    this._stateEntryConstraints.push(constraint)
+    this.stateEntryConstraints.push(constraint)
   }
 
   protected async verifyAllStateEntryConstraints(): Promise<boolean> {
-    const promisedConstraints = this._stateEntryConstraints.map((constraint) =>
+    const promisedConstraints = this.stateEntryConstraints.map((constraint) =>
       constraint.call(this)
     )
 
@@ -156,9 +89,9 @@ export abstract class AbstractState {
   }
 
   protected async verifyRolesOfClient(): Promise<boolean> {
-    if (this._userAuthenticationActivated) {
+    if (this.userAuthenticationActivated) {
       const auth: boolean = await this.authorizeUser(
-        new AuthenticationHeader(this._req)
+        new AuthenticationHeader(this.req)
       )
       this.logger.debug(
         `Authentication activated. User is authorized: ${auth}.`
@@ -171,21 +104,15 @@ export abstract class AbstractState {
   }
 
   protected activateUserAuthentication(): void {
-    this._userAuthenticationActivated = true
+    this.userAuthenticationActivated = true
   }
 
-  public async build(): Promise<HttpResponse> {
-    try {
-      return this.buildInternal()
-    } catch (error) {
-      this.logger.error(`An unexpected error has occurred.\n${error.stack}`)
-
-      return this.response.internalServerError()
-    }
+  public async build(): Promise<void> {
+    await this.buildInternal()
   }
 
   protected async verifyApiKey(): Promise<boolean> {
-    if (this._apiKeyVerificationActivated) {
+    if (this.apiKeyVerificationActivated) {
       const check: boolean = await this.verifyNecessaryApiKey()
       this.logger.debug('API Key check activated and result was: ' + check)
       return check
@@ -206,48 +133,50 @@ export abstract class AbstractState {
   }
 
   private isAccessWithoutAuthenticationAllowed(): boolean {
-    return this._allowedRoles.matchesWithoutAuthentication()
+    return this.allowedRoles.matchesWithoutAuthentication()
   }
 
   private async isAccessAllowedForThisUser(
     authenticationHeader: AuthenticationHeader
   ): Promise<boolean> {
-    this._authInfo = await this.getAuthenticationInfo(authenticationHeader)
+    this.authInfo = await this.getAuthenticationInfo(authenticationHeader)
 
     if (
-      this._authInfo === undefined ||
-      this._authInfo.isAuthenticated === false
+      this.authInfo === undefined ||
+      this.authInfo.isAuthenticated === false
     ) {
       return false
     } else {
-      return this._authInfo.hasRoles(this._allowedRoles)
+      return this.authInfo.hasRoles(this.allowedRoles)
     }
   }
 
   private async getAuthenticationInfo(
     authenticationHeader: AuthenticationHeader
   ): Promise<AuthenticationInfo> {
-    this._authenticationInfo = await this.authenticationInfoProvider.get(
+    this.authenticationInfo = await this.authenticationInfoProvider.get(
       authenticationHeader
     )
-    this._stateContext.put(StateContext.ST_AUTH_USER, this._authenticationInfo)
-    return this._authenticationInfo
+    this.stateContext.put(StateContext.ST_AUTH_USER, this.authenticationInfo)
+    return this.authenticationInfo
   }
 
   protected activateApiKeyCheck(): void {
-    this._apiKeyVerificationActivated = true
+    this.apiKeyVerificationActivated = true
   }
 
   protected configureState(): void {}
 
+  protected abstract extractFromRequest(): void
+
   protected defineAuthenticationResponseHeaders(): void {
     if (
-      this._authenticationInfo !== undefined &&
-      this._authenticationInfo.isAuthenticated
+      this.authenticationInfo !== undefined &&
+      this.authenticationInfo.isAuthenticated
     ) {
-      if (this._authenticationInfo.tokenToRespond !== undefined) {
+      if (this.authenticationInfo.tokenToRespond !== undefined) {
         const respond: AuthenticationInfoTokenToRespond = this
-          ._authenticationInfo.tokenToRespond
+          .authenticationInfo.tokenToRespond
         this.response.header(respond.tokenHeaderName, respond.token)
       }
     }
@@ -280,7 +209,7 @@ export abstract class AbstractState {
     if ((await constraint.call(this)) === true) {
       this.response.link(
         buildLink(
-          this._req.baseUrl + uriTemplate,
+          this.req.baseUrl() + uriTemplate,
           relType,
           mediaTypeOrParams,
           params
@@ -312,7 +241,7 @@ export abstract class AbstractState {
   ): void {
     this.response.link(
       buildLink(
-        this._req.baseUrl + uriTemplate,
+        this.req.baseUrl() + uriTemplate,
         relType,
         mediaTypeOrParams,
         params
@@ -329,22 +258,22 @@ export abstract class AbstractState {
   protected getMediaTypeFromAcceptHeader(
     headerName?: string
   ): string | string[] {
-    return headerName ? this._req.headers[headerName] : this._req.headers.accept
+    return headerName ? this.req.headers[headerName] : this.req.headers.accept
   }
 
   protected getAcceptedMediaType(): string {
-    return this._req.acceptedMediaType
+    return this.req.acceptedMediaType
   }
 
   private async verifyNecessaryApiKey(): Promise<boolean> {
-    this._apiKeyHeader = new ApiKeyHeader(this._req)
+    this.apiKeyHeader = new ApiKeyHeader(this.req)
 
-    const apiKeyInfo: ApiKeyInfo = await this.getApiKeInfo(this._apiKeyHeader)
+    const apiKeyInfo: ApiKeyInfo = await this.getApiKeInfo(this.apiKeyHeader)
 
     return apiKeyInfo.isValid()
   }
 
   protected convertModelToView(model: AbstractModel): AbstractModel {
-    return convertLinks(model, this._req.baseUrl)
+    return convertLinks(model, this.req.baseUrl())
   }
 }

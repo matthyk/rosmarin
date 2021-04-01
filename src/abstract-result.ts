@@ -1,9 +1,9 @@
 export abstract class AbstractResult {
-  protected _hasError: boolean
+  private _hasError: boolean
 
-  private _errorCode: number
+  public errorCode: number
 
-  private _errorMessage: string
+  public errorMessage: string
 
   public abstract isEmpty(): boolean
 
@@ -19,15 +19,7 @@ export abstract class AbstractResult {
   public setError(errorCode: number, errorMessage: string): void
   public setError(errorCode?: number, errorMessage?: string): void {
     this._hasError = true
-    this._errorCode = errorCode
-    this._errorMessage = errorMessage
-  }
-
-  public get errorCode(): number {
-    return this._errorCode
-  }
-
-  public get errorMessage(): string {
-    return this._errorMessage
+    this.errorCode = errorCode
+    this.errorMessage = errorMessage
   }
 }

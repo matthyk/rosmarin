@@ -1,40 +1,30 @@
 import { AbstractModel } from '../../abstract-model'
 import { AbstractState } from '../abstract-state'
 import { CollectionModelDatabaseResult } from '../../../database/results/collection-model-database-result'
-import { HttpResponse } from '../../../routing/http-response'
-import { CacheControl } from "../../caching/cache-control";
-import { PagingContext } from "../../filter/paging-context";
-import { AbstractFilter } from "../../filter/abstract-filter";
+import { HttpResponse } from '../../../router/http-response'
+import { CacheControl } from '../../caching/cache-control'
+import { PagingContext } from '../../filter/paging-context'
+import { AbstractFilter } from '../../filter/abstract-filter'
+import { FastifyRequest } from 'fastify'
+import { ModelId } from '../../types'
 
 export abstract class AbstractGetCollectionState<
   T extends AbstractModel
 > extends AbstractState {
-
   public static readonly HEADER_TOTALNUMBEROFRESULTS = 'X-totalnumberofresults'
 
   public static readonly HEADER_NUMBEROFRESULTS = 'X-numberofresults'
 
-  protected _databaseResult: CollectionModelDatabaseResult<T>
+  protected req: FastifyRequest<{
+    Body: never
+    Params: { id: number | string }
+  }>
 
-  private _query: AbstractFilter<T>
+  protected requestedId: ModelId
 
-  protected pagingContext: PagingContext
+  protected databaseResult: CollectionModelDatabaseResult<T>
 
-  public set query(value: AbstractFilter<T>) {
-    this._query = value;
-  }
-
-  public get query(): AbstractFilter<T> {
-    return this._query;
-  }
-
-  public set databaseResult(value: CollectionModelDatabaseResult<T>) {
-    this._databaseResult = value;
-  }
-
-  public get databaseResult(): CollectionModelDatabaseResult<T> {
-    return this._databaseResult;
-  }
+  protected query: AbstractFilter<T>
 
   protected async buildInternal(): Promise<HttpResponse> {
     this.configureState()
@@ -44,13 +34,13 @@ export abstract class AbstractGetCollectionState<
     if ((await this.verifyApiKey()) === false) {
       return this.response.apiKeyRequired()
     }
-    if (await this.verifyRolesOfClient()) {
+    if ((await this.verifyRolesOfClient()) === false) {
       return this.response.unauthorized()
     }
 
-    this._databaseResult = await this.loadModelsFromDatabase()
+    this.databaseResult = await this.loadModelsFromDatabase()
 
-    if (this._databaseResult.hasError()) {
+    if (this.databaseResult.hasError()) {
       return this.response.internalServerError()
     }
 
@@ -86,15 +76,23 @@ export abstract class AbstractGetCollectionState<
   }
 
   protected defineHttpHeaderTotalNumberOfResults(): void {
-    this.response.header(this.getHeaderForTotalNumberOfResults(), this._databaseResult.totalNumberOfResult)
+    this.response.header(
+      this.getHeaderForTotalNumberOfResults(),
+      this.databaseResult.totalNumberOfResult
+    )
   }
 
   protected defineHttpHeaderNumberOfResults(): void {
-    this.response.header(this.getHeaderForNumberOfResults(), this._databaseResult.databaseResult.length)
+    this.response.header(
+      this.getHeaderForNumberOfResults(),
+      this.databaseResult.databaseResult.length
+    )
   }
 
   protected defineHttpResponseBody(): void {
-    this.response.entity = this.convertModelsToViews(this._databaseResult.databaseResult)
+    this.response.entity = this.convertModelsToViews(
+      this.databaseResult.databaseResult
+    )
   }
 
   protected defineHttpCaching(): void {
@@ -108,34 +106,42 @@ export abstract class AbstractGetCollectionState<
 
   protected abstract defineTransitionLinks(): Promise<void> | void
 
+  protected extractFromRequest(): void {
+    this.requestedId = this.req.params.id
+  }
+
   protected definePagingLinks(): void {
     const pagingContext: PagingContext = this.createPagingContext()
 
-    this._query.addNextPageLink(pagingContext)
-    this._query.addPrevPageLink(pagingContext)
-    this._query.addPageHeader(pagingContext)
+    this.query.addNextPageLink(pagingContext)
+    this.query.addPrevPageLink(pagingContext)
+    this.query.addPageHeader(pagingContext)
   }
 
   protected defineSelfLink(): void {
-    this._query.addSelfLink(this.createPagingContext())
+    this.query.addSelfLink(this.createPagingContext())
   }
 
   /**
-   * Override this method so change the header name value
+   * Override this method to change the header name value
    */
   protected getHeaderForTotalNumberOfResults(): string {
     return AbstractGetCollectionState.HEADER_TOTALNUMBEROFRESULTS
   }
 
   protected getHeaderForNumberOfResults(): string {
-    return AbstractGetCollectionState.HEADER_NUMBEROFRESULTS
+    return AbstractGetCollectionState.HEADER_TOTALNUMBEROFRESULTS
   }
 
   protected convertModelsToViews(models: T[]): T[] {
-    return models.map((m: T) => this.convertModelToView(m) as T) // TODO
+    return models.map((m: T) => <T>this.convertModelToView(m)) // TODO
   }
 
   private createPagingContext(): PagingContext {
-    return new PagingContext(this._req, this.response, this.getAcceptedMediaType())
+    return new PagingContext(
+      this.req,
+      this.response,
+      this.getAcceptedMediaType()
+    )
   }
 }

@@ -3,64 +3,29 @@ import { AbstractState } from '../abstract-state'
 import { ModelId } from '../../types'
 import { SingleModelDatabaseResult } from '../../../database/results/single-model-database-result'
 import { NoContentDatabaseResult } from '../../../database/results/no-content-database-result'
-import { HttpResponse } from '../../../routing/http-response'
+import { HttpResponse } from '../../../router/http-response'
 import { createEtag } from '../../caching/etag-generator'
+import { FastifyRequest } from 'fastify'
 
 export abstract class AbstractDeleteState<
   T extends AbstractModel
 > extends AbstractState {
-  protected _modelIdToDelete: ModelId
+  protected modelIdToDelete: ModelId
 
-  protected _modelForConstraintCheck: AbstractModel
+  protected modelForConstraintCheck: AbstractModel
 
-  protected _dbResultAfterGet: SingleModelDatabaseResult<T>
+  protected dbResultAfterGet: SingleModelDatabaseResult<T>
 
-  protected _dbResultAfterDelete: NoContentDatabaseResult
+  protected dbResultAfterDelete: NoContentDatabaseResult
 
-  protected _responseStatus200 = false
+  protected responseStatus200 = false
 
-  public get modelIdToDelete(): ModelId {
-    return this._modelIdToDelete
-  }
-
-  public set modelIdToDelete(value: ModelId) {
-    this._modelIdToDelete = value
-  }
-
-  public get modelForConstraintCheck(): AbstractModel {
-    return this._modelForConstraintCheck
-  }
-
-  public set modelForConstraintCheck(value: AbstractModel) {
-    this._modelForConstraintCheck = value
-  }
-
-  public get dbResultAfterGet(): SingleModelDatabaseResult<T> {
-    return this._dbResultAfterGet
-  }
-
-  public set dbResultAfterGet(value: SingleModelDatabaseResult<T>) {
-    this._dbResultAfterGet = value
-  }
-
-  public get dbResultAfterDelete(): NoContentDatabaseResult {
-    return this._dbResultAfterDelete
-  }
-
-  public set dbResultAfterDelete(value: NoContentDatabaseResult) {
-    this._dbResultAfterDelete = value
-  }
-
-  public get responseStatus200(): boolean {
-    return this._responseStatus200
-  }
-
-  public set responseStatus200(value: boolean) {
-    this._responseStatus200 = value
-  }
+  protected req: FastifyRequest<{ Params: { id: ModelId } }>
 
   protected async buildInternal(): Promise<HttpResponse> {
     this.configureState()
+
+    this.extractFromRequest()
 
     if ((await this.verifyApiKey()) === false) {
       return this.response.unauthorized('API key required.')
@@ -72,13 +37,13 @@ export abstract class AbstractDeleteState<
 
     // locking
 
-    this._dbResultAfterGet = await this.loadModelFromDatabase()
+    this.dbResultAfterGet = await this.loadModelFromDatabase()
 
-    if (this._dbResultAfterGet.isEmpty()) {
+    if (this.dbResultAfterGet.isEmpty()) {
       return this.response.notFound()
     }
 
-    this._modelForConstraintCheck = this._dbResultAfterGet.result
+    this.modelForConstraintCheck = this.dbResultAfterGet.result
 
     if ((await this.verifyAllStateEntryConstraints()) === false) {
       return this.response.forbidden()
@@ -88,9 +53,9 @@ export abstract class AbstractDeleteState<
       return this.response.preconditionFailed()
     }
 
-    this._dbResultAfterDelete = await this.deleteModelInDatabase()
+    this.dbResultAfterDelete = await this.deleteModelInDatabase()
 
-    if (this._dbResultAfterDelete.hasError()) {
+    if (this.dbResultAfterDelete.hasError()) {
       return this.response.internalServerError()
     }
 
@@ -103,13 +68,13 @@ export abstract class AbstractDeleteState<
 
   protected clientKnowsCurrentModelState(): boolean {
     const currentEtag: string = this.createEntityTagOfResult()
-    const lastModifiedAt: number = this._dbResultAfterGet.result.lastModifiedAt
+    const lastModifiedAt: number = this.dbResultAfterGet.result.lastModifiedAt
 
-    return this._req.evaluatePreconditions(lastModifiedAt, currentEtag)
+    return this.req.evaluateConditionalPutRequest(lastModifiedAt, currentEtag)
   }
 
   private createEntityTagOfResult(): string {
-    return createEtag(this._dbResultAfterGet.result)
+    return createEtag(this.dbResultAfterGet.result)
   }
 
   protected abstract deleteModelInDatabase(): Promise<NoContentDatabaseResult>
@@ -125,15 +90,19 @@ export abstract class AbstractDeleteState<
   }
 
   private defineResponseStatus(): void {
-    this._responseStatus200 ? this.response.ok() : this.response.noContent()
+    this.responseStatus200 ? this.response.ok() : this.response.noContent()
   }
 
   private defineHttpResponseBody(): void {
-    if (this._responseStatus200) {
+    if (this.responseStatus200) {
       this.response.entity = this.convertModelToView(
-        this._dbResultAfterGet.result
+        this.dbResultAfterGet.result
       )
     }
+  }
+
+  protected extractFromRequest(): void {
+    this.modelIdToDelete = this.req.params.id
   }
 
   protected abstract defineTransitionLinks(): Promise<void> | void

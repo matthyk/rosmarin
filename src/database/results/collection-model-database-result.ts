@@ -6,18 +6,10 @@ export class CollectionModelDatabaseResult<
 > extends AbstractDatabaseResult {
   protected _databaseResult: T[]
 
-  protected _totalNumberOfResult = 0
+  public totalNumberOfResult = 0
 
   public get databaseResult(): T[] {
     return this._databaseResult
-  }
-
-  public get totalNumberOfResult(): number {
-    return this._totalNumberOfResult
-  }
-
-  public set totalNumberOfResult(value: number) {
-    this._totalNumberOfResult = value
   }
 
   constructor()

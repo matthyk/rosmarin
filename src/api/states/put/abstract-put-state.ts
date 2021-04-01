@@ -2,87 +2,40 @@ import { AbstractModel } from '../../abstract-model'
 import { ViewModel } from '../../abstract-view-model'
 import { SingleModelDatabaseResult } from '../../../database/results/single-model-database-result'
 import { NoContentDatabaseResult } from '../../../database/results/no-content-database-result'
-import { HttpResponse } from '../../../routing/http-response'
+import { HttpResponse } from '../../../router/http-response'
 import { AbstractStateWithCaching } from '../abstract-state-with-caching'
 import { linkHeader } from '../hyperlinks'
 import RelationTypes from '../relation-types'
+import { merge } from '../../views/view-merger/merge'
+import { FastifyRequest } from 'fastify'
+import { ModelId } from '../../types'
 
 export abstract class AbstractPutState<
   T extends AbstractModel,
   V extends ViewModel
 > extends AbstractStateWithCaching {
-  protected _modelToUpdate: V
+  protected modelToUpdate: V
 
-  protected _dbResultAfterGet: SingleModelDatabaseResult<T>
+  protected dbResultAfterGet: SingleModelDatabaseResult<T>
 
-  protected _modelInDatabase: T
+  protected modelInDatabase: T
 
-  protected _modelForConstraintCheck: AbstractModel
+  protected modelForConstraintCheck: AbstractModel
 
-  protected _dbResultAfterUpdate: NoContentDatabaseResult
+  protected dbResultAfterUpdate: NoContentDatabaseResult
 
-  protected _responseStatus200 = true
+  protected responseStatus200 = true
 
-  protected _usingPutToCreateAllowed = false
+  protected usingPutToCreateAllowed = false
 
-  public get modelToUpdate(): V {
-    return this._modelToUpdate
-  }
+  protected req: FastifyRequest<{ Body: V; Params: { id: ModelId } }>
 
-  public set modelToUpdate(value: V) {
-    this._modelToUpdate = value
-  }
-
-  public get dbResultAfterGet(): SingleModelDatabaseResult<T> {
-    return this._dbResultAfterGet
-  }
-
-  public set dbResultAfterGet(value: SingleModelDatabaseResult<T>) {
-    this._dbResultAfterGet = value
-  }
-
-  public get modelInDatabase(): T {
-    return this._modelInDatabase
-  }
-
-  public set modelInDatabase(value: T) {
-    this._modelInDatabase = value
-  }
-
-  public get modelForConstraintCheck(): AbstractModel {
-    return this._modelForConstraintCheck
-  }
-
-  public set modelForConstraintCheck(value: AbstractModel) {
-    this._modelForConstraintCheck = value
-  }
-
-  public get dbResultAfterUpdate(): NoContentDatabaseResult {
-    return this._dbResultAfterUpdate
-  }
-
-  public set dbResultAfterUpdate(value: NoContentDatabaseResult) {
-    this._dbResultAfterUpdate = value
-  }
-
-  public get responseStatus200(): boolean {
-    return this._responseStatus200
-  }
-
-  public set responseStatus200(value: boolean) {
-    this._responseStatus200 = value
-  }
-
-  public get usingPutToCreateAllowed(): boolean {
-    return this._usingPutToCreateAllowed
-  }
-
-  public set usingPutToCreateAllowed(value: boolean) {
-    this._usingPutToCreateAllowed = value
-  }
+  protected updatedId: ModelId
 
   protected async buildInternal(): Promise<HttpResponse> {
     this.configureState()
+
+    this.extractFromRequest()
 
     if ((await this.verifyApiKey()) === false) {
       return this.response.unauthorized('API key required.')
@@ -92,18 +45,18 @@ export abstract class AbstractPutState<
       return this.response.unauthorized('You have no power here!')
     }
 
-    this._dbResultAfterGet = await this.loadModelFromDatabase()
+    this.dbResultAfterGet = await this.loadModelFromDatabase()
 
-    this._modelInDatabase = this._dbResultAfterGet.result
+    this.modelInDatabase = this.dbResultAfterGet.result
 
     if (
-      this._dbResultAfterGet.isEmpty() &&
-      this._usingPutToCreateAllowed === false
+      this.dbResultAfterGet.isEmpty() &&
+      this.usingPutToCreateAllowed === false
     ) {
       return this.response.notFound()
     }
 
-    this._modelForConstraintCheck = this._modelToUpdate
+    this.modelForConstraintCheck = this.modelToUpdate
 
     if ((await this.verifyAllStateEntryConstraints()) === false) {
       return this.response.forbidden()
@@ -115,13 +68,13 @@ export abstract class AbstractPutState<
 
     this.mergeViewModelIntoDatabaseModel()
 
-    this._dbResultAfterUpdate = await this.updateModelInDatabase()
+    this.dbResultAfterUpdate = await this.updateModelInDatabase()
 
-    if (this._dbResultAfterUpdate.hasError()) {
+    if (this.dbResultAfterUpdate.hasError()) {
       return this.response.internalServerError()
     }
 
-    this._modelForConstraintCheck = this._modelInDatabase
+    this.modelForConstraintCheck = this.modelInDatabase
 
     return await this.createResponse()
   }
@@ -130,17 +83,22 @@ export abstract class AbstractPutState<
     SingleModelDatabaseResult<T>
   >
 
+  protected extractFromRequest(): void {
+    this.modelToUpdate = this.req.body
+    this.updatedId = this.req.params.id
+  }
+
   protected clientKnowsCurrentModelState(): boolean {
     const currentEtag: string = this.createEntityTagOfResult(
-      this._dbResultAfterGet.result
+      this.dbResultAfterGet.result
     )
-    const lastModifiedAt: number = this._dbResultAfterGet.result.lastModifiedAt
+    const lastModifiedAt: number = this.dbResultAfterGet.result.lastModifiedAt
 
-    return this._req.evaluatePreconditions(lastModifiedAt, currentEtag)
+    return this.req.evaluateConditionalPutRequest(lastModifiedAt, currentEtag)
   }
 
   private mergeViewModelIntoDatabaseModel(): void {
-    // TODO
+    this.modelInDatabase = merge(this.modelToUpdate, this.modelInDatabase)
   }
 
   protected abstract updateModelInDatabase(): Promise<NoContentDatabaseResult>
@@ -148,7 +106,7 @@ export abstract class AbstractPutState<
   protected async createResponse(): Promise<HttpResponse> {
     this.defineResponseStatus()
 
-    this.defineModelForCaching(this._modelInDatabase)
+    this.defineModelForCaching(this.modelInDatabase)
 
     this.defineHttpCaching()
 
@@ -164,19 +122,19 @@ export abstract class AbstractPutState<
   protected abstract defineTransitionLinks(): Promise<void> | void
 
   private defineResponseStatus(): void {
-    this._responseStatus200 ? this.response.ok() : this.response.noContent()
+    this.responseStatus200 ? this.response.ok() : this.response.noContent()
   }
 
   protected defineHttpResponseBody(): void {
-    if (this._responseStatus200) {
-      this.response.entity = this.convertModelToView(this._modelInDatabase)
+    if (this.responseStatus200) {
+      this.response.entity = this.convertModelToView(this.modelInDatabase)
     }
   }
 
   protected defineSelfLink(): void {
     this.response.link(
       linkHeader(
-        this._req.fullUrl,
+        this.req.fullUrl(),
         RelationTypes.self,
         this.getAcceptedMediaType()
       )

@@ -1,9 +1,8 @@
 import { ModelId } from './types'
 
 export abstract class AbstractModel {
-
-  protected constructor(id: ModelId) {
-    this.id = id;
+  public constructor(id: ModelId) {
+    this.id = id
   }
 
   public id: ModelId

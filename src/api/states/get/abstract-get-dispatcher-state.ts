@@ -1,5 +1,5 @@
 import { AbstractState } from '../abstract-state'
-import { HttpResponse } from '../../../routing/http-response'
+import { HttpResponse } from '../../../router/http-response'
 import { CacheControl } from '../../caching/cache-control'
 import { linkHeader } from '../hyperlinks'
 import RelationTypes from '../relation-types'
@@ -48,7 +48,7 @@ export abstract class AbstractGetDispatcherState extends AbstractState {
   protected defineSelfLink(): void {
     this.response.link(
       linkHeader(
-        this._req.fullUrl,
+        this.req.fullUrl(),
         RelationTypes.self,
         this.getAcceptedMediaType()
       )
