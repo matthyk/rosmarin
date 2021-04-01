@@ -114,7 +114,7 @@ const buildObjectSchema = <T>(ctor: Constructor<T>): Schema => {
 }
 
 export const buildSchema = <T>(ctor: Constructor<T>): Schema => {
-  const schemaOptions: SchemaOptions = (Reflect.getMetadata( constants.VALIDATION_CLASS_METADATA_COLLECTION, ctor ) ?? {}) as SchemaOptions
+  const schemaOptions: SchemaOptions = <SchemaOptions>Reflect.getMetadata( constants.VALIDATION_CLASS_METADATA_COLLECTION, ctor)
 
   if (typeof schemaOptions !== 'undefined') {
     return buildCollectionSchema(ctor, schemaOptions)
