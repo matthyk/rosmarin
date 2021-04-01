@@ -10,5 +10,6 @@ export default {
   VIEW_ARRAY_PROPS: Symbol('view:array:properties'),
   VALIDATION_PROPERTIES_METADATA: Symbol('validation:properties:metadata'),
   VALIDATION_CLASS_METADATA: Symbol('validation:class:metadata'),
+  VALIDATION_CLASS_METADATA_COLLECTION: Symbol('validation:class:metadata:collection'),
   DEFAULT_MEDIA_TYPE: 'application/json',
 }

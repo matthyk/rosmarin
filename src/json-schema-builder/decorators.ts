@@ -97,3 +97,13 @@ export const view = (schemaOptions: SchemaOptions = {}): ClassDecorator => {
     )
   }
 }
+
+export const collectionView = (schemaOptions: SchemaOptions = {}): ClassDecorator =>{
+  return (target: Target) => {
+    Reflect.defineMetadata(
+      constants.VALIDATION_CLASS_METADATA_COLLECTION,
+      schemaOptions,
+      target
+    )
+  }
+}

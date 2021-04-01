@@ -33,7 +33,20 @@ const mergePropertyOptions = <T>(
   return mergedResult
 }
 
-const buildArraySchema = <T>(
+const buildCollectionSchema = <T>(
+  ctor: Constructor<T>,
+  schemaOptions: SchemaOptions
+): Schema => {
+
+  const arraySchema: Schema = {
+    type: 'array',
+    items: buildObjectSchema(ctor)
+  }
+
+  return {...arraySchema, ...schemaOptions}
+}
+
+const buildArrayPropertySchema = <T>(
   ctor: Constructor<T>,
   propKey: string | symbol,
   schemaOptions: SchemaOptions
@@ -82,7 +95,7 @@ const buildObjectSchema = <T>(ctor: Constructor<T>): Schema => {
 
     // property is an array, an object or a primitive type
     if (isArray(prop.type)) {
-      objectSchema.properties[prop.name] = buildArraySchema(
+      objectSchema.properties[prop.name] = buildArrayPropertySchema(
         ctor,
         prop.name,
         prop.schemaOptions
@@ -101,5 +114,11 @@ const buildObjectSchema = <T>(ctor: Constructor<T>): Schema => {
 }
 
 export const buildSchema = <T>(ctor: Constructor<T>): Schema => {
-  return buildObjectSchema(ctor)
+  const schemaOptions: SchemaOptions = (Reflect.getMetadata( constants.VALIDATION_CLASS_METADATA_COLLECTION, ctor ) ?? {}) as SchemaOptions
+
+  if (typeof schemaOptions !== 'undefined') {
+    return buildCollectionSchema(ctor, schemaOptions)
+  } else {
+    return buildObjectSchema(ctor)
+  }
 }
