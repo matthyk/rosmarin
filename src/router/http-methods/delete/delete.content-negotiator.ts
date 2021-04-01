@@ -21,7 +21,7 @@ export class ContentNegotiator {
 
     if (duplicatedMediaType)
       throw new Error(
-        `Conflicting routes found. You have registered multiple routes that produces the media type "${duplicatedMediaType}".`
+        `Conflicting route definitions found. You have registered multiple routes that produces the media type "${duplicatedMediaType}".`
       )
   }
 
@@ -38,7 +38,7 @@ export class ContentNegotiator {
       throw new RouterError(
         406,
         'Not Acceptable',
-        `Media type ${accept} is not acceptable. Available media types: ${this.mediaTypes.join(
+        `Media type ${ accept } is not acceptable. Acceptable media types: ${this.mediaTypes.join(
           ', '
         )}`
       )

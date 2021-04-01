@@ -17,7 +17,7 @@ export class ContentNegotiator {
 
     if (duplicatedMediaType)
       throw new Error(
-        `Conflicting routes found. You have registered multiple routes that consumes the media type "${duplicatedMediaType}".`
+        `Conflicting route definitions found. You have registered multiple routes that consumes the media type "${duplicatedMediaType}".`
       )
   }
 

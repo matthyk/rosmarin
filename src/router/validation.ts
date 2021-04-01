@@ -20,7 +20,7 @@ export const validateAndTransform = (
 ): void => {
   if (
     typeof toValidate === 'undefined' ||
-    typeof validatorAndTransformer.validationFn !== 'function'
+    typeof validatorAndTransformer?.validationFn !== 'function'
   )
     return
 

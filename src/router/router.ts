@@ -161,7 +161,7 @@ export class Router {
           })
 
           this.logger.debug(
-            `Registered { ${httpMethod} ${path} } route${
+            `Registered [ ${httpMethod} ${path} ] route${
               compiledDefinition.length > 1
                 ? ` with ${compiledDefinition.length} different handlers`
                 : ''
@@ -169,7 +169,7 @@ export class Router {
           )
         } catch (e) {
           this.logger.error(
-            `Registration of route { ${httpMethod} ${path} } failed and will be skipped. ${e.message}`
+            `Registration of route [ ${httpMethod} ${path} ] failed and will be skipped. Reason: ${e.message}`
           )
         }
       }
