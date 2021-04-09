@@ -1,18 +1,18 @@
-import { AbstractModel } from '../../abstract-model'
-import { ViewModel } from '../../abstract-view-model'
-import { SingleModelDatabaseResult } from '../../../database/results/single-model-database-result'
-import { NoContentDatabaseResult } from '../../../database/results/no-content-database-result'
+import { AbstractModel, AbstractViewModel, ModelId } from '../../../models'
+import {
+  NoContentDatabaseResult,
+  SingleModelDatabaseResult,
+} from '../../../database'
 import { HttpResponse } from '../../../router/http-response'
 import { AbstractStateWithCaching } from '../abstract-state-with-caching'
-import { linkHeader } from '../hyperlinks'
-import RelationTypes from '../relation-types'
-import { merge } from '../../views/view-merger/merge'
+import { linkHeader } from '../../links'
+import RelationTypes from '../../relation-types'
+import { merge } from '../../views'
 import { FastifyRequest } from 'fastify'
-import { ModelId } from '../../types'
 
 export abstract class AbstractPutState<
   T extends AbstractModel,
-  V extends ViewModel
+  V extends AbstractViewModel
 > extends AbstractStateWithCaching {
   protected modelToUpdate: V
 
@@ -28,7 +28,7 @@ export abstract class AbstractPutState<
 
   protected usingPutToCreateAllowed = false
 
-  protected req: FastifyRequest<{ Body: V; Params: { id: ModelId } }>
+  protected req: FastifyRequest<{ Body: V }>
 
   protected updatedId: ModelId
 
@@ -85,7 +85,7 @@ export abstract class AbstractPutState<
 
   protected extractFromRequest(): void {
     this.modelToUpdate = this.req.body
-    this.updatedId = this.req.params.id
+    this.updatedId = this.extractFromParams('id')
   }
 
   protected clientKnowsCurrentModelState(): boolean {
@@ -127,7 +127,7 @@ export abstract class AbstractPutState<
 
   protected defineHttpResponseBody(): void {
     if (this.responseStatus200) {
-      this.response.entity = this.convertModelToView(this.modelInDatabase)
+      this.response.entity = this.convertLinks(this.modelInDatabase)
     }
   }
 

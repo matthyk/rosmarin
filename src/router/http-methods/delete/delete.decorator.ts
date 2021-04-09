@@ -1,11 +1,11 @@
 import {
-  Constructor,
   ReturnsConfiguredState,
   TypedMethodDecorator,
-} from '../../utility-types'
-import { Route } from '../../decorators/route'
+} from '../../../utility-types'
+import { Route } from '../../decorators'
 import { AbstractDeleteState } from '../../../api/states/delete/abstract-delete-state'
-import { AbstractModel } from '../../../api/abstract-model'
+import { AbstractModel } from '../../../models/abstract-model'
+import { ViewConverter } from '../../route-definitions'
 
 /**
  * There should be no validation schema defined for DELETE requests, because the request payload should be ignored anyway.
@@ -13,7 +13,7 @@ import { AbstractModel } from '../../../api/abstract-model'
  */
 export interface DeleteRouteDefinition {
   path?: string
-  outputSchema?: Constructor
+  viewConverter?: ViewConverter
   produces?: string
 }
 

@@ -1,5 +1,5 @@
 import { FastifyReply } from 'fastify'
-import { IError } from '../error-interface'
+import { IError } from '../models/error-model'
 import { CacheControl } from '../api/caching/cache-control'
 
 // Type took from https://github.com/fastify/fastify/blob/7efd2540f1ca169f128c1dd4318512347583b293/types/reply.d.ts#L36

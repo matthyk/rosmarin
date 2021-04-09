@@ -2,24 +2,23 @@ import { FastifyRequest } from 'fastify'
 import { Logger } from 'pino'
 import { container } from 'tsyringe'
 import { HttpResponse } from '../../router/http-response'
-import { AuthenticationInfo } from '../security/authentication-info'
-import { ApiKeyInfo } from '../api-key/api-key-info'
-import { Constraint } from '../constraints/constraint'
-import { ApiKeyHeader } from '../api-key/api-key-header'
-import { AuthenticationHeader } from '../security/authentication-header'
-import { StateContext } from '../state-context'
-import { Roles } from '../security/roles'
-import { AuthenticationInfoProvider } from '../security/authentication-info-provider'
-import { ApiKeyInfoProvider } from '../api-key/api-key-info-provider'
-import { AuthenticationInfoTokenToRespond } from '../security/authentication-info-token-to-respond'
-import { buildLink } from './hyperlinks'
-import { AbstractModel } from '../abstract-model'
-import { convertLinks } from '../views/link-converter'
+import {
+  AuthenticationHeader,
+  AuthenticationInfo,
+  AuthenticationInfoTokenToRespond,
+  IAuthenticationInfoProvider,
+  Roles,
+} from '../security'
+import { ApiKeyHeader, ApiKeyInfo, IApiKeyInfoProvider } from '../api-key'
+import { Constraint } from '../constraints'
+import { buildLink, convertLinks } from '../links'
+import { AbstractModel } from '../../models'
 import { HttpRequest } from '../../router/http-request'
-import { Configured } from './configured'
+import { Configured } from './state.configured'
 import constants from '../../constants'
+import { ExtractOptions } from './state.extract-options'
+import { HttpError } from '../../router/errors/http-error'
 
-// noinspection JSMethodCanBeStatic
 export abstract class AbstractState {
   protected readonly logger: Logger
 
@@ -27,19 +26,15 @@ export abstract class AbstractState {
 
   protected response: HttpResponse
 
-  protected readonly authenticationInfoProvider: AuthenticationInfoProvider
+  protected readonly authenticationInfoProvider: IAuthenticationInfoProvider
 
-  protected readonly apiKeyInfoProvider: ApiKeyInfoProvider
+  protected readonly apiKeyInfoProvider: IApiKeyInfoProvider
 
   protected apiKeyVerificationActivated = false
 
   protected userAuthenticationActivated = false
 
-  protected stateEntryConstraints: Constraint<this>[] = []
-
-  protected stateContext: StateContext = new StateContext()
-
-  protected authenticationInfo: AuthenticationInfo
+  protected readonly stateEntryConstraints: Constraint<this>[] = []
 
   protected allowedRoles = new Roles()
 
@@ -47,7 +42,7 @@ export abstract class AbstractState {
    * After method {@link #verifyRolesOfClient()} this object contains information about the user that
    * has sent this request.
    */
-  protected authInfo: AuthenticationInfo
+  protected authenticationInfo: AuthenticationInfo
 
   protected apiKeyHeader: ApiKeyHeader
 
@@ -56,11 +51,11 @@ export abstract class AbstractState {
       .resolve<Logger>(constants.LOGGER)
       .child({ context: this.constructor.name })
 
-    this.authenticationInfoProvider = container.resolve<AuthenticationInfoProvider>(
+    this.authenticationInfoProvider = container.resolve<IAuthenticationInfoProvider>(
       constants.AUTHENTICATION_INFO_PROVIDER
     )
 
-    this.apiKeyInfoProvider = container.resolve<ApiKeyInfoProvider>(
+    this.apiKeyInfoProvider = container.resolve<IApiKeyInfoProvider>(
       constants.API_KEY_INFO_PROVIDER
     )
   }
@@ -113,11 +108,8 @@ export abstract class AbstractState {
 
   protected async verifyApiKey(): Promise<boolean> {
     if (this.apiKeyVerificationActivated) {
-      const check: boolean = await this.verifyNecessaryApiKey()
-      this.logger.debug('API Key check activated and result was: ' + check)
-      return check
+      return await this.verifyNecessaryApiKey()
     } else {
-      this.logger.debug('API Key check NOT activated.')
       return true
     }
   }
@@ -139,26 +131,18 @@ export abstract class AbstractState {
   private async isAccessAllowedForThisUser(
     authenticationHeader: AuthenticationHeader
   ): Promise<boolean> {
-    this.authInfo = await this.getAuthenticationInfo(authenticationHeader)
-
-    if (
-      this.authInfo === undefined ||
-      this.authInfo.isAuthenticated === false
-    ) {
-      return false
-    } else {
-      return this.authInfo.hasRoles(this.allowedRoles)
-    }
-  }
-
-  private async getAuthenticationInfo(
-    authenticationHeader: AuthenticationHeader
-  ): Promise<AuthenticationInfo> {
     this.authenticationInfo = await this.authenticationInfoProvider.get(
       authenticationHeader
     )
-    this.stateContext.put(StateContext.ST_AUTH_USER, this.authenticationInfo)
-    return this.authenticationInfo
+
+    if (
+      this.authenticationInfo === undefined ||
+      this.authenticationInfo.isAuthenticated === false
+    ) {
+      return false
+    } else {
+      return this.authenticationInfo.hasRoles(this.allowedRoles)
+    }
   }
 
   protected activateApiKeyCheck(): void {
@@ -168,6 +152,171 @@ export abstract class AbstractState {
   protected configureState(): void {}
 
   protected abstract extractFromRequest(): void
+
+  private extractFrom<T extends string | number | boolean>(
+    from: 'query' | 'params' | 'headers',
+    key: string,
+    transformTo: 'string' | 'boolean' | 'number',
+    defaultValue?: T,
+    options: ExtractOptions<T> = {}
+  ): T | undefined {
+    let value: string | number | boolean = (this.req as any)[from][key]
+
+    if (options.throwIfUndefined === true) {
+      throw new HttpError(
+        400,
+        'Bad Request',
+        `Value of '${key}' in request ${from} cannot be undefined.`
+      )
+    }
+
+    if (typeof options.validate === 'function') {
+      options.validate(value as T)
+    }
+
+    switch (transformTo) {
+      case 'string':
+        break
+      case 'boolean': {
+        value = value == 'true'
+        break
+      }
+      case 'number': {
+        value = +value
+        if (isNaN(value)) {
+          value = defaultValue
+        }
+        break
+      }
+    }
+
+    return <T>value ?? defaultValue
+  }
+
+  protected extractNumberFromQuery(
+    key: string,
+    defaultValue?: number,
+    options: ExtractOptions<number> = {}
+  ): number {
+    return this.extractFrom<number>(
+      'query',
+      key,
+      'number',
+      defaultValue,
+      options
+    )
+  }
+
+  protected extractBoolFromQuery(
+    key: string,
+    defaultValue?: boolean,
+    options: ExtractOptions<boolean> = {}
+  ): boolean {
+    return this.extractFrom<boolean>(
+      'query',
+      key,
+      'boolean',
+      defaultValue,
+      options
+    )
+  }
+
+  protected extractFromQuery(
+    key: string,
+    defaultValue?: string,
+    options: ExtractOptions<string> = {}
+  ): string {
+    return this.extractFrom<string>(
+      'query',
+      key,
+      'number',
+      defaultValue,
+      options
+    )
+  }
+
+  protected extractNumberFromParams(
+    key: string,
+    defaultValue?: number,
+    options: ExtractOptions<number> = {}
+  ): number {
+    return this.extractFrom<number>(
+      'params',
+      key,
+      'number',
+      defaultValue,
+      options
+    )
+  }
+
+  protected extractBoolFromParams(
+    key: string,
+    defaultValue?: boolean,
+    options: ExtractOptions<boolean> = {}
+  ): boolean {
+    return this.extractFrom<boolean>(
+      'params',
+      key,
+      'boolean',
+      defaultValue,
+      options
+    )
+  }
+
+  protected extractFromParams(
+    key: string,
+    defaultValue?: string,
+    options: ExtractOptions<string> = {}
+  ): string {
+    return this.extractFrom<string>(
+      'params',
+      key,
+      'number',
+      defaultValue,
+      options
+    )
+  }
+  protected extractNumberFromHeaders(
+    key: string,
+    defaultValue?: number,
+    options: ExtractOptions<number> = {}
+  ): number {
+    return this.extractFrom<number>(
+      'headers',
+      key,
+      'number',
+      defaultValue,
+      options
+    )
+  }
+
+  protected extractBoolFromHeaders(
+    key: string,
+    defaultValue?: boolean,
+    options: ExtractOptions<boolean> = {}
+  ): boolean {
+    return this.extractFrom<boolean>(
+      'headers',
+      key,
+      'boolean',
+      defaultValue,
+      options
+    )
+  }
+
+  protected extractFromHeaders(
+    key: string,
+    defaultValue?: string,
+    options: ExtractOptions<string> = {}
+  ): string {
+    return this.extractFrom<string>(
+      'headers',
+      key,
+      'number',
+      defaultValue,
+      options
+    )
+  }
 
   protected defineAuthenticationResponseHeaders(): void {
     if (
@@ -250,15 +399,7 @@ export abstract class AbstractState {
   }
 
   protected getMediaTypeFromContentTypeHeader(): string {
-    return this.getMediaTypeFromAcceptHeader('content-type') as string
-  }
-
-  protected getMediaTypeFromAcceptHeader(): string
-  protected getMediaTypeFromAcceptHeader(headerName: string): string | string[]
-  protected getMediaTypeFromAcceptHeader(
-    headerName?: string
-  ): string | string[] {
-    return headerName ? this.req.headers[headerName] : this.req.headers.accept
+    return this.req.headers['content-type']
   }
 
   protected getAcceptedMediaType(): string {
@@ -273,7 +414,10 @@ export abstract class AbstractState {
     return apiKeyInfo.isValid()
   }
 
-  protected convertModelToView(model: AbstractModel): AbstractModel {
+  /**
+   * Override this methods in specific sub-classes
+   */
+  protected convertLinks(model: AbstractModel): AbstractModel {
     return convertLinks(model, this.req.baseUrl())
   }
 }

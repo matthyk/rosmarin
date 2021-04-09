@@ -1,31 +1,36 @@
-import { Schemas } from '../../route-definitions'
 import {
-  Constructor,
+  JsonSchema,
+  JsonSchemaAndTransformer,
+  Schemas,
+  ViewConverter,
+} from '../../route-definitions'
+import {
   ReturnsConfiguredState,
   TypedMethodDecorator,
-} from '../../utility-types'
-import { Route } from '../../decorators/route'
+} from '../../../utility-types'
+import { Route } from '../../decorators'
 import { AbstractPutState } from '../../../api/states/put/abstract-put-state'
-import { AbstractModel } from '../../../api/abstract-model'
-import { ViewModel } from '../../../api/abstract-view-model'
+import { AbstractModel } from '../../../models/abstract-model'
+import { AbstractViewModel } from '../../../models/abstract-view-model'
 
-export interface PutRouteDefinition<T> {
+export interface PutRouteDefinition {
   path?: string
-  schema: Schemas<Constructor, Constructor<T>>
-  outputSchema?: Constructor
+  schema: Schemas<JsonSchema, JsonSchemaAndTransformer>
+  viewConverter?: ViewConverter
   consumes: string
   produces?: string
 }
 
 export const Put = <
   Model extends AbstractModel,
-  View extends ViewModel,
+  View extends AbstractViewModel,
   State extends AbstractPutState<Model, View>
 >(
-  routeDefinition: PutRouteDefinition<View>
+  routeDefinition: PutRouteDefinition
 ): TypedMethodDecorator<ReturnsConfiguredState<View, any, State>> => {
   return Route({
     ...routeDefinition,
     httpMethod: 'PUT',
+    viewConverter: routeDefinition.viewConverter,
   })
 }

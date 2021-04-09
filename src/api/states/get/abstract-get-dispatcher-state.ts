@@ -1,8 +1,8 @@
 import { AbstractState } from '../abstract-state'
 import { HttpResponse } from '../../../router/http-response'
-import { CacheControl } from '../../caching/cache-control'
-import { linkHeader } from '../hyperlinks'
-import RelationTypes from '../relation-types'
+import { CacheControl } from '../../caching'
+import { linkHeader } from '../../links'
+import RelationTypes from '../../relation-types'
 
 export abstract class AbstractGetDispatcherState extends AbstractState {
   protected async buildInternal(): Promise<HttpResponse> {

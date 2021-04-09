@@ -1,26 +1,13 @@
+/**
+ * This class is used to send the JWT token to the user after a successful login during JWT authentication.
+ */
 export class AuthenticationInfoTokenToRespond {
-  private _tokenHeaderName: string
+  public tokenHeaderName: string
 
-  private _token: string
+  public token: string
 
   constructor(tokenHeaderName: string, token: string) {
-    this._tokenHeaderName = tokenHeaderName
-    this._token = token
-  }
-
-  public get tokenHeaderName(): string {
-    return this._tokenHeaderName
-  }
-
-  public set tokenHeaderName(value: string) {
-    this._tokenHeaderName = value
-  }
-
-  public get token(): string {
-    return this._token
-  }
-
-  public set token(value: string) {
-    this._token = value
+    this.tokenHeaderName = tokenHeaderName
+    this.token = token
   }
 }

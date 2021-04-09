@@ -1,17 +1,29 @@
 import { FastifyRequest } from 'fastify'
 
+export const evaluate = (
+  serverEtag: string,
+  serverDate: number | Date,
+  clientEtag: string,
+  clientDate: string
+): boolean => {
+  return (
+    serverEtag === clientEtag ||
+    new Date(clientDate).getTime() >
+      (serverDate instanceof Date ? serverDate.getTime() : serverDate)
+  )
+}
+
 // Arrow function would break the "this" binding
 export function evaluateConditionalGetRequest(
   this: FastifyRequest,
   lastModifiedAt: number | Date,
   etag: string
 ): boolean {
-  return (
-    etag === this.headers['if-none-match'] ||
-    new Date(this.headers['if-modified-since']).getTime() >
-      (lastModifiedAt instanceof Date
-        ? lastModifiedAt.getTime()
-        : lastModifiedAt)
+  return evaluate(
+    etag,
+    lastModifiedAt,
+    this.headers['if-none-match'],
+    this.headers['if-modified-since']
   )
 }
 
@@ -21,11 +33,10 @@ export function evaluateConditionalPutRequest(
   lastModifiedAt: number | Date,
   etag: string
 ): boolean {
-  return (
-    etag === this.headers['if-match'] ||
-    new Date(this.headers['if-unmodified-since']).getTime() >
-      (lastModifiedAt instanceof Date
-        ? lastModifiedAt.getTime()
-        : lastModifiedAt)
+  return evaluate(
+    etag,
+    lastModifiedAt,
+    this.headers['if-match'],
+    this.headers['if-unmodified-since']
   )
 }

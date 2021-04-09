@@ -1,10 +1,9 @@
-import { AbstractModel } from '../../abstract-model'
+import { AbstractModel, ModelId } from '../../../models'
 import { AbstractStateWithCaching } from '../abstract-state-with-caching'
 import { HttpResponse } from '../../../router/http-response'
-import { SingleModelDatabaseResult } from '../../../database/results/single-model-database-result'
-import { linkHeader } from '../hyperlinks'
-import RelationTypes from '../relation-types'
-import { ModelId } from '../../types'
+import { SingleModelDatabaseResult } from '../../../database'
+import { linkHeader } from '../../links'
+import RelationTypes from '../../relation-types'
 import { FastifyRequest } from 'fastify'
 
 export abstract class AbstractGetState<
@@ -14,10 +13,7 @@ export abstract class AbstractGetState<
     super()
   }
 
-  protected req: FastifyRequest<{
-    Body: never
-    Params: { id: number | string }
-  }>
+  protected req: FastifyRequest<{ Body: never }>
 
   protected requestedId: ModelId
 
@@ -87,7 +83,7 @@ export abstract class AbstractGetState<
   }
 
   protected defineHttpResponseBody(): void {
-    this.response.entity = this.convertModelToView(this.requestedModel.result)
+    this.response.entity = this.convertLinks(this.requestedModel.result)
   }
 
   protected abstract defineTransitionLinks(): Promise<void> | void
@@ -97,7 +93,7 @@ export abstract class AbstractGetState<
   >
 
   protected extractFromRequest(): void {
-    this.requestedId = this.req.params.id
+    this.requestedId = this.extractFromParams('id')
   }
 
   protected clientKnowsCurrentModelState(): boolean {

@@ -1,8 +1,9 @@
 import { CompiledRouteDefinition } from '../../route-definitions'
 import Negotiator from 'negotiator'
-import { RouterError } from '../../router-error'
+import { RouterError } from '../../errors/router-error'
 import { hasDuplicate } from '../../utils'
 import constants from '../../../constants'
+import { RouteRegistrationError } from '../../errors/route-registration-error'
 
 /**
  * If a route definition has no producing media type the default  media type "application/json" is set.
@@ -25,7 +26,7 @@ export class ContentNegotiator {
     const duplicatedMediaType = this.findConflictingRoutes()
 
     if (duplicatedMediaType)
-      throw new Error(
+      throw new RouteRegistrationError(
         `Conflicting route definitions found. You have registered multiple routes that produces the media type "${duplicatedMediaType}".`
       )
   }
@@ -44,12 +45,16 @@ export class ContentNegotiator {
     const acceptedMediaTypes = negotiator.mediaTypes(this.mediaTypes)
 
     if (acceptedMediaTypes.length === 0) {
+      /*
+      If the media type is not acceptable the server SHOULD generate a payload containing a list of available media types.
+      See https://tools.ietf.org/html/rfc7231#section-6.5.6
+       */
       throw new RouterError(
         406,
         'Not Acceptable',
-        `Media type ${accept} is not acceptable. Acceptable media types: ${this.mediaTypes.join(
+        `Media type "${accept}" is not acceptable. Acceptable media types: ${this.mediaTypes.join(
           ', '
-        )}` // https://tools.ietf.org/html/rfc7231#section-6.5.6
+        )}.`
       )
     }
 

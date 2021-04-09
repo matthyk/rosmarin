@@ -4,13 +4,13 @@ import { FastifyRequest } from 'fastify'
  * Wraps the authentication header from a Fastify request to provide a clean interface to interact with
  */
 export class AuthenticationHeader {
-  private _principal = ''
+  public principal = ''
 
-  private _credential = ''
+  public credential = ''
 
-  private readonly _token: string
+  public readonly token: string
 
-  private readonly _authHeader: string
+  public readonly authHeader: string
 
   constructor()
   constructor(token: string)
@@ -24,28 +24,28 @@ export class AuthenticationHeader {
       typeof principalOrTokenOrRequest === 'undefined' &&
       typeof credential === 'undefined'
     ) {
-      this._authHeader = undefined
+      this.authHeader = undefined
     } else if (
       typeof principalOrTokenOrRequest === 'string' &&
       typeof credential === 'string'
     ) {
-      this._credential = credential
-      this._principal = principalOrTokenOrRequest as string
+      this.credential = credential
+      this.principal = principalOrTokenOrRequest as string
     } else if (
       typeof principalOrTokenOrRequest === 'string' &&
       typeof credential === 'undefined'
     ) {
-      this._token = principalOrTokenOrRequest
+      this.token = principalOrTokenOrRequest
     } else {
       const request: FastifyRequest = principalOrTokenOrRequest as FastifyRequest
-      this._authHeader = request.headers.authorization
+      this.authHeader = request.headers.authorization
 
-      if (this._authHeader !== undefined) {
+      if (this.authHeader !== undefined) {
         if (
-          this._authHeader.startsWith('Basic ') ||
-          this._authHeader.startsWith('basic ')
+          this.authHeader.startsWith('Basic ') ||
+          this.authHeader.startsWith('basic ')
         ) {
-          const withoutBasic: string = this._authHeader.replace(/[Bb]asic /, '')
+          const withoutBasic: string = this.authHeader.replace(/[Bb]asic /, '')
           const userColonPass: string = Buffer.from(
             withoutBasic,
             'base64'
@@ -53,37 +53,21 @@ export class AuthenticationHeader {
           const asArray: string[] = userColonPass.split(':')
 
           if (asArray.length === 2) {
-            this._principal = asArray[0]
-            this._credential = asArray[1]
+            this.principal = asArray[0]
+            this.credential = asArray[1]
           }
         } else {
-          this._token = this._authHeader.replace(/[Bb]earer /, '')
+          this.token = this.authHeader.replace(/[Bb]earer /, '')
         }
       }
     }
   }
 
-  public get principal(): string {
-    return this._principal
-  }
-
-  public get credential(): string {
-    return this._credential
-  }
-
-  public get token(): string {
-    return this._token
-  }
-
-  public get authHeader(): string {
-    return this._authHeader
-  }
-
   public isSet(): boolean {
-    return this._authHeader !== undefined
+    return this.authHeader !== undefined
   }
 
   public isTokenAuthentication(): boolean {
-    return !!this._token
+    return !!this.token
   }
 }

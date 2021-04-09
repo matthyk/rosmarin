@@ -20,7 +20,10 @@ export class Roles {
   constructor(role: Role)
   constructor(logical: Logical, ...roles: Role[])
   constructor(roleOrLogical?: Role | Logical, ...roles: Role[]) {
-    if (!roleOrLogical && (!roles || roles?.length === 0)) {
+    if (
+      typeof roleOrLogical === 'undefined' &&
+      (typeof roles === 'undefined' || roles?.length === 0)
+    ) {
       this.roles = []
       this.logical = Logical.AND
     } else if (roleOrLogical instanceof Role) {

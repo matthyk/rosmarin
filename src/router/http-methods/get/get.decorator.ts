@@ -1,11 +1,11 @@
 import {
-  Constructor,
   ReturnsConfiguredState,
   TypedMethodDecorator,
-} from '../../utility-types'
-import { Route } from '../../decorators/route'
-import { AbstractGetState } from '../../../api/states/get/abstract-get-state'
-import { AbstractModel } from '../../../api/abstract-model'
+} from '../../../utility-types'
+import { Route } from '../../decorators'
+import { AbstractGetState } from '../../../api'
+import { AbstractModel } from '../../../models'
+import { ViewConverter } from '../../route-definitions'
 
 /**
  * There should be no validation schema defined for GET requests, because the request payload should be ignored anyway.
@@ -13,7 +13,7 @@ import { AbstractModel } from '../../../api/abstract-model'
  */
 export interface GetRouteDefinition {
   path?: string
-  outputSchema?: Constructor
+  viewConverter: ViewConverter
   produces: string
 }
 

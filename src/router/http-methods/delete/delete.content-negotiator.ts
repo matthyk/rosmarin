@@ -1,5 +1,5 @@
 import { CompiledRouteDefinition } from '../../route-definitions'
-import { RouterError } from '../../router-error'
+import { RouterError } from '../../errors/router-error'
 import { hasDuplicate } from '../../utils'
 import Negotiator from 'negotiator'
 
@@ -38,7 +38,7 @@ export class ContentNegotiator {
       throw new RouterError(
         406,
         'Not Acceptable',
-        `Media type ${ accept } is not acceptable. Acceptable media types: ${this.mediaTypes.join(
+        `Media type ${accept} is not acceptable. Acceptable media types: ${this.mediaTypes.join(
           ', '
         )}`
       )

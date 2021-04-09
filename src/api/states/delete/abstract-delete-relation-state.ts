@@ -1,6 +1,5 @@
 import { AbstractDeleteState } from './abstract-delete-state'
-import { AbstractModel } from '../../abstract-model'
-import { ModelId } from '../../types'
+import { AbstractModel, ModelId } from '../../../models'
 import { FastifyRequest } from 'fastify'
 
 export abstract class AbstractDeleteRelationState<
@@ -8,10 +7,10 @@ export abstract class AbstractDeleteRelationState<
 > extends AbstractDeleteState<T> {
   protected parentId: ModelId
 
-  protected _req: FastifyRequest<{ Params: { id: ModelId; parentId: ModelId } }>
+  protected _req: FastifyRequest
 
   protected extractFromRequest(): void {
     super.extractFromRequest()
-    this.parentId = this._req.params.parentId
+    this.parentId = this.extractFromParams('parentId')
   }
 }

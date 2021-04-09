@@ -1,6 +1,6 @@
-import { HttpMethod } from './http-methods/http-method'
+import { HttpMethod } from './http-methods'
 import { ValidateFunction } from 'ajv'
-import { Constructor, StringifyFn } from './utility-types'
+import { AbstractViewModel } from '../models'
 
 /**
  * This interface is used for every HTTP verb although not every route handler uses everything in this interface.
@@ -10,30 +10,46 @@ import { Constructor, StringifyFn } from './utility-types'
  * This prevents the user from developing non HTTP and REST compliant APIs
  */
 export interface CompiledRouteDefinition extends BaseRouteDefinition {
-  validationAndTransformation?: Schemas<ValidatorAndTransformer>
-  stringifyFn?: StringifyFn
+  validationAndTransformation?: Schemas<
+    ValidateFunction,
+    ValidatorAndTransformer
+  >
 }
+
+export type ViewConverter<T extends AbstractViewModel = AbstractViewModel> = (
+  view: T
+) => string
 
 export interface BaseRouteDefinition {
   produces?: string
   consumes?: string
   method: string | symbol
+  viewConverter?: ViewConverter
 }
 
-export interface Schemas<T = Constructor, V = T> {
-  body?: V
-  query?: T
-  params?: T
+export interface JsonSchemaAndTransformer<
+  T extends AbstractViewModel = AbstractViewModel
+> {
+  schema: JsonSchema
+  transformer: (plain: unknown) => T
 }
 
 export interface FullRouteDefinition extends BaseRouteDefinition {
   path?: string
   httpMethod: HttpMethod
-  schema?: Schemas
-  outputSchema?: Constructor
+  schema?: Schemas<JsonSchema, JsonSchemaAndTransformer>
+}
+
+export interface Schemas<T = unknown, V = T> {
+  body?: V
+  query?: T
+  params?: T
+  headers?: T
 }
 
 export interface ValidatorAndTransformer<T = unknown> {
   validationFn: ValidateFunction
-  transformer: (plain: unknown) => T
+  transformationFn: (plain: unknown) => T
 }
+
+export type JsonSchema = Record<string, any>

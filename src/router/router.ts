@@ -3,32 +3,32 @@ import fastify, {
   FastifyInstance,
   FastifyRequest,
 } from 'fastify'
-import { Constructor, RouteStore } from './utility-types'
-import { HttpMethod } from './http-methods'
+import { Constructor, RouteStore } from '../utility-types'
+import { HttpMethod, validateRouteDefinitions } from './http-methods'
 import { Logger } from 'pino'
 import {
   CompiledRouteDefinition,
   FullRouteDefinition,
 } from './route-definitions'
-import { handleError, notFound } from "./error-handler";
+import { handleError, notFound } from './http-error-handling'
 import { RouterConfig } from './router-config'
 import { container } from 'tsyringe'
-import { buildSerializationFn } from './serialization'
-import ajv, { buildValidatorAndTransformerFn } from './validation'
+import ajv, { compileSchema } from './validation'
 import { createRouteHandler } from './route-handler'
 import {
   evaluateConditionalGetRequest,
   evaluateConditionalPutRequest,
 } from './conditional-request-evaluation'
 import { RouteHandlerMethod } from 'fastify/types/route'
-import constants from '../constants'
+import { RouteRegistrationError } from './errors/route-registration-error'
+import { routerMetadataStore, ControllerMetadata } from '../metadata-stores'
 
 export class Router {
   private readonly fastify: FastifyInstance
 
   private readonly logger: Logger
 
-  public addContentType: AddContentTypeParser
+  public readonly addContentType: AddContentTypeParser
 
   constructor(
     logger: Logger,
@@ -52,10 +52,6 @@ export class Router {
     this.fastify.addContentTypeParser<string>(
       /\+json$/,
       { parseAs: 'string' },
-      // see https://github.com/fastify/fastify/pull/2961
-      // should be fixed in Fastify version 3.14.2
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       this.fastify.getDefaultJsonParser('error', 'ignore')
     )
 
@@ -87,11 +83,11 @@ export class Router {
     })
   }
 
-  public listen(port = 3000, host?: string): Promise<string> {
+  public listen(port: number, host: string): Promise<string> {
     return this.fastify.listen({ port, host })
   }
 
-  public registerControllers(...controllers: Constructor[]): void {
+  public registerControllers(controllers: Constructor[]): void {
     this.configureFastify()
 
     this.fastify.register(
@@ -138,16 +134,26 @@ export class Router {
     const instance = container.resolve(controller)
 
     this.logger.debug(
-      `Register Controller "${controller.name}". Start to search for routes...`
+      `Register Controller "${controller.name}". Start to search for routes.`
     )
 
     for (const [path, value] of Object.entries(routeStore)) {
-      for (const [httpMethod, definition] of Object.entries(value)) {
-        const compiledDefinition: CompiledRouteDefinition[] = this.compileRouteDefinitions(
-          definition as FullRouteDefinition[]
-        )
-
+      for (const [httpMethod, definitions] of Object.entries(value)) {
         try {
+          /*
+          We validate the route definitions before we compile and register them.
+          We are very strict about this to prevent non HTTP/ REST compliant development in any case.
+          */
+          validateRouteDefinitions(
+            <FullRouteDefinition[]>definitions,
+            <HttpMethod>httpMethod,
+            instance.constructor.name
+          )
+
+          const compiledDefinition: CompiledRouteDefinition[] = this.compileRouteDefinitions(
+            definitions as FullRouteDefinition[]
+          )
+
           const handler: RouteHandlerMethod = createRouteHandler(
             compiledDefinition,
             instance,
@@ -167,10 +173,22 @@ export class Router {
                 : ''
             }.`
           )
-        } catch (e) {
-          this.logger.error(
-            `Registration of route [ ${httpMethod} ${path} ] failed and will be skipped. Reason: ${e.message}`
-          )
+        } catch (err) {
+          if (err instanceof RouteRegistrationError) {
+            this.logger.warn(
+              `Registration of route [ ${httpMethod} ${path} ] will be skipped. Reason: ${
+                err.message
+              }${
+                typeof err.details !== 'undefined'
+                  ? '\nSee details: ' + err.details
+                  : ''
+              }`
+            )
+          } else {
+            this.logger.error(
+              `Registration of route [ ${httpMethod} ${path} ] failed unexpectedly and will be skipped. ${err.stack}`
+            )
+          }
         }
       }
     }
@@ -179,18 +197,19 @@ export class Router {
   private buildRoutes(controller: Constructor): RouteStore | undefined {
     const store: RouteStore = {}
 
-    const prefix: string = Reflect.getMetadata(constants.CONTROLLER, controller)
-
-    if (typeof prefix === 'undefined') return undefined
-
-    const routes: FullRouteDefinition[] = Reflect.getMetadata(
-      constants.CONTROLLER_ROUTES,
+    const controllerMetadata: ControllerMetadata = routerMetadataStore.getController(
       controller
     )
 
-    for (const routeDefinition of routes ?? []) {
+    if (typeof controllerMetadata?.prefix === 'undefined') return undefined
+
+    const routes: FullRouteDefinition[] = routerMetadataStore.getRoutes(
+      controller
+    )
+
+    for (const routeDefinition of routes) {
       const fullPath: string = Router.sanitizeUrl(
-        prefix,
+        controllerMetadata.prefix,
         routeDefinition.path ?? '/'
       )
 
@@ -235,11 +254,15 @@ export class Router {
         consumes: definition.consumes,
         method: definition.method,
         validationAndTransformation: {
-          body: buildValidatorAndTransformerFn(definition.schema?.body),
-          query: buildValidatorAndTransformerFn(definition.schema?.query),
-          params: buildValidatorAndTransformerFn(definition.schema?.params),
+          body: {
+            validationFn: compileSchema(definition.schema?.body),
+            transformationFn: definition.schema?.body?.transformer,
+          },
+          query: compileSchema(definition.schema?.query),
+          params: compileSchema(definition.schema?.params),
+          headers: compileSchema(definition.schema?.headers),
         },
-        stringifyFn: buildSerializationFn(definition.outputSchema),
+        viewConverter: definition.viewConverter,
       }
     })
   }

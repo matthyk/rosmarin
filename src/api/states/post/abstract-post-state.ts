@@ -1,14 +1,13 @@
-import { AbstractModel } from '../../abstract-model'
-import { ViewModel } from '../../abstract-view-model'
+import { AbstractModel, AbstractViewModel } from '../../../models'
 import { AbstractState } from '../abstract-state'
-import { NoContentDatabaseResult } from '../../../database/results/no-content-database-result'
+import { NoContentDatabaseResult } from '../../../database'
 import { HttpResponse } from '../../../router/http-response'
-import { merge } from '../../views/view-merger/merge'
+import { merge } from '../../views'
 import { FastifyRequest } from 'fastify'
 
 export abstract class AbstractPostState<
   T extends AbstractModel,
-  V extends ViewModel
+  V extends AbstractViewModel
 > extends AbstractState {
   protected modelToCreate: V
 

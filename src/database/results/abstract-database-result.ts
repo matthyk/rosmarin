@@ -1,4 +1,4 @@
-import { AbstractResult } from '../../abstract-result'
+import { AbstractResult } from '../../models/abstract-result'
 
 export abstract class AbstractDatabaseResult extends AbstractResult {
   protected databaseExecutionTimeInMs: number

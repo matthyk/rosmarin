@@ -1,13 +1,13 @@
 import 'reflect-metadata'
 import MatcherContext = jest.MatcherContext
 import CustomMatcherResult = jest.CustomMatcherResult
-import { RouteDefinition } from '../src/routing/route-definition'
+import { FullRouteDefinition } from '../src/router/route-definitions'
 
 expect.extend({
   toContainRouteDefinition(
     this: MatcherContext,
-    received: RouteDefinition[],
-    argument: RouteDefinition
+    received: FullRouteDefinition[],
+    argument: FullRouteDefinition
   ): CustomMatcherResult {
     const passed: boolean = this.equals(
       received,

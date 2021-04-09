@@ -3,12 +3,11 @@ import { RouteHandlerMethod } from 'fastify/types/route'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { ContentNegotiator } from './delete.content-negotiator'
 import { HttpResponse } from '../../http-response'
-import { handleError } from '../../error-handler'
+import { handleError, sendErrorResponse } from '../../http-error-handling'
 import { AbstractDeleteState } from '../../../api/states/delete/abstract-delete-state'
-import { AbstractModel } from '../../../api/abstract-model'
-import { Configured } from '../../../api/states/configured'
-import { sendErrorResponse } from '../send-error-reponse'
-import { validateAndTransform } from '../../validation'
+import { AbstractModel } from '../../../models/abstract-model'
+import { Configured } from '../../../api/states/state.configured'
+import { validate } from '../../validation'
 
 export const deleteRouteHandler = (
   routeDefinitions: CompiledRouteDefinition[],
@@ -25,13 +24,13 @@ export const deleteRouteHandler = (
         req.headers.accept
       )
 
-      validateAndTransform(
+      validate(
         req,
         'params',
         negotiationResult.validationAndTransformation.params
       )
 
-      validateAndTransform(
+      validate(
         req,
         'query',
         negotiationResult.validationAndTransformation.query
@@ -54,7 +53,7 @@ export const deleteRouteHandler = (
         } else {
           reply
             .type(negotiationResult.produces ?? 'application/json')
-            .serializer(negotiationResult.stringifyFn)
+            .serializer(negotiationResult.viewConverter)
             .send(httpResponse.entity)
         }
       } else {

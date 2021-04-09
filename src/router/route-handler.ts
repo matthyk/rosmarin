@@ -8,6 +8,9 @@ import {
   putRouteHandler,
 } from './http-methods'
 
+/**
+ * Custom HTTP methods like LINK could be possible when https://github.com/delvedor/find-my-way/pull/178 lands
+ */
 export const createRouteHandler = (
   routeDefinitions: CompiledRouteDefinition[],
   controller: unknown,

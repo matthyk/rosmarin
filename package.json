@@ -11,7 +11,7 @@
     "lint:fix": "eslint --fix \"src/**/*.ts\" \"__test__/**/*.spec.ts\" \"./*.ts\"",
     "build": "tsc --project tsconfig.build.json",
     "clean": "rimraf dist",
-    "dev": "npm run clean && npm run build && node dist/examples/example-1/index.js",
+    "dev": "npm run clean && npm run build && node dist/example.js",
     "convert": "ts-node src/examples/example-1/index.ts"
   },
   "keywords": [
@@ -25,12 +25,13 @@
   "dependencies": {
     "class-transformer": "^0.4.0",
     "etag": "^1.8.1",
-    "fastify": "^3.14.1",
+    "fastify": "^3.14.2",
     "negotiator": "^0.6.2",
     "reflect-metadata": "^0.1.13",
     "tsyringe": "^4.4.0"
   },
   "devDependencies": {
+    "@types/bcrypt": "^3.0.0",
     "@types/benchmark": "^2.1.0",
     "@types/etag": "^1.8.0",
     "@types/jest": "^26.0.20",
@@ -42,6 +43,7 @@
     "@typescript-eslint/eslint-plugin": "^4.16.1",
     "@typescript-eslint/parser": "^4.16.1",
     "autocannon": "^7.0.5",
+    "bcrypt": "^5.0.1",
     "benchmark": "^2.1.4",
     "eslint": "^7.21.0",
     "eslint-config-prettier": "^8.1.0",

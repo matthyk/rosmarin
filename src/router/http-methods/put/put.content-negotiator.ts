@@ -1,7 +1,7 @@
 import Negotiator from 'negotiator'
 import { hasDuplicate } from '../../utils'
 import { CompiledRouteDefinition } from '../../route-definitions'
-import { RouterError } from '../../router-error'
+import { RouterError } from '../../errors/router-error'
 import constants from '../../../constants'
 
 export class ContentNegotiator {
@@ -16,10 +16,11 @@ export class ContentNegotiator {
       if (typeof def.consumes === 'undefined') {
         def.consumes = constants.DEFAULT_MEDIA_TYPE
       }
-  // def.produces ? `and produces "${def.produces}` : ''
+      // def.produces ? `and produces "${def.produces}` : ''
       if (this.consumingMediaTypes.has(def.consumes)) {
         throw new Error(
-          `Conflicting route definitions found. You have registered multiple routes that consumes the media type "${def.consumes}"` + (def.produces ? ` and produces "${def.produces}".` : '.')
+          `Conflicting route definitions found. You have registered multiple routes that consumes the media type "${def.consumes}"` +
+            (def.produces ? ` and produces "${def.produces}".` : '.')
         )
       }
 
@@ -54,7 +55,7 @@ export class ContentNegotiator {
       throw new RouterError(
         415,
         'Unsupported Media Type',
-        `Media Type ${contentType} is not supported for the specific route.`
+        `Media Type "${contentType}" is not supported for the specific route.`
       )
     }
 
@@ -77,7 +78,9 @@ export class ContentNegotiator {
       throw new RouterError(
         406,
         'Not Acceptable',
-        `\`Media type ${ accept } is not acceptable. Acceptable media types: ${this.producingMediaTypes.join()}`
+        `Media type "${accept}" is not acceptable. Acceptable media types: ${this.producingMediaTypes.join(
+          ', '
+        )}`
       )
     }
 
@@ -90,7 +93,9 @@ export class ContentNegotiator {
     throw new RouterError(
       406,
       'Not Acceptable',
-      `Media type ${ accept } is not acceptable. Acceptable media types: ${this.producingMediaTypes.join()}`
+      `Media type "${accept}" is not acceptable. Acceptable media types: ${this.producingMediaTypes.join(
+        ', '
+      )}`
     )
   }
 }

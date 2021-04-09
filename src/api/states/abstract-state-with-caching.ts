@@ -1,9 +1,11 @@
 import { AbstractState } from './abstract-state'
-import { CachingType } from '../caching/caching-type'
-import { AbstractModel } from '../abstract-model'
-import { CacheControlConfiguration } from '../caching/cache-control-configuration'
-import { CacheControl } from '../../router'
-import { createEtag } from '../caching/etag-generator'
+import {
+  CacheControl,
+  CacheControlConfiguration,
+  CachingType,
+  createEtag,
+} from '../caching'
+import { AbstractModel } from '../../models'
 
 export abstract class AbstractStateWithCaching extends AbstractState {
   protected cachingType: CachingType
@@ -139,6 +141,13 @@ export abstract class AbstractStateWithCaching extends AbstractState {
   protected createEntityTagOfResult(): string
   protected createEntityTagOfResult(model: AbstractModel): string
   protected createEntityTagOfResult(model?: AbstractModel): string {
+    return this.createEtag(model ?? this.modelForCaching)
+  }
+
+  /**
+   * Override this method to create etag in another way
+   */
+  protected createEtag(model?: AbstractModel): string {
     return createEtag(model ?? this.modelForCaching)
   }
 }

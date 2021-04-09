@@ -1,5 +1,5 @@
 import { CompiledRouteDefinition } from '../../route-definitions'
-import { RouterError } from '../../router-error'
+import { RouterError } from '../../errors/router-error'
 import { hasDuplicate } from '../../utils'
 
 /**

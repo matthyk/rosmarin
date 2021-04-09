@@ -1,4 +1,4 @@
-import { AbstractModel } from '../../api/abstract-model'
+import { AbstractModel } from '../../models/abstract-model'
 import { AbstractDatabaseResult } from './abstract-database-result'
 
 export class CollectionModelDatabaseResult<

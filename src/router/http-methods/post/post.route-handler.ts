@@ -2,14 +2,13 @@ import { CompiledRouteDefinition } from '../../route-definitions'
 import { RouteHandlerMethod } from 'fastify/types/route'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { HttpResponse } from '../../http-response'
-import { handleError } from '../../error-handler'
+import { handleError, sendErrorResponse } from '../../http-error-handling'
 import { AbstractPostState } from '../../../api/states/post/abstract-post-state'
-import { ViewModel } from '../../../api/abstract-view-model'
-import { AbstractModel } from '../../../api/abstract-model'
-import { Configured } from '../../../api/states/configured'
+import { AbstractViewModel } from '../../../models/abstract-view-model'
+import { AbstractModel } from '../../../models/abstract-model'
+import { Configured } from '../../../api/states/state.configured'
 import { ContentNegotiator } from './post.content-negotiator'
-import { validateAndTransform } from '../../validation'
-import { sendErrorResponse } from '../send-error-reponse'
+import { validate, validateAndTransform } from '../../validation'
 
 export const postRouteHandler = (
   routeDefinitions: CompiledRouteDefinition[],
@@ -32,13 +31,13 @@ export const postRouteHandler = (
         negotiationResult.validationAndTransformation.body
       )
 
-      validateAndTransform(
+      validate(
         req,
         'params',
         negotiationResult.validationAndTransformation.params
       )
 
-      validateAndTransform(
+      validate(
         req,
         'query',
         negotiationResult.validationAndTransformation.query
@@ -49,7 +48,7 @@ export const postRouteHandler = (
       const httpResponse: HttpResponse = new HttpResponse(reply)
 
       const configured: Configured<
-        AbstractPostState<AbstractModel, ViewModel>
+        AbstractPostState<AbstractModel, AbstractViewModel>
       > = await controller[negotiationResult.method](req, httpResponse)
 
       await configured.state.build()

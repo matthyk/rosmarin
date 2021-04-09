@@ -1,26 +1,29 @@
-import { Schemas } from '../../route-definitions'
 import {
-  Constructor,
+  JsonSchema,
+  JsonSchemaAndTransformer,
+  Schemas,
+} from '../../route-definitions'
+import {
   ReturnsConfiguredState,
   TypedMethodDecorator,
-} from '../../utility-types'
-import { Route } from '../../decorators/route'
+} from '../../../utility-types'
+import { Route } from '../../decorators'
 import { AbstractPostState } from '../../../api/states/post/abstract-post-state'
-import { AbstractModel } from '../../../api/abstract-model'
-import { ViewModel } from '../../../api/abstract-view-model'
+import { AbstractModel } from '../../../models/abstract-model'
+import { AbstractViewModel } from '../../../models/abstract-view-model'
 
-export interface PostRouteDefinition<T extends ViewModel> {
+export interface PostRouteDefinition {
   path?: string
-  schema: Schemas<Constructor, Constructor<T>>
+  schema: Schemas<JsonSchema, JsonSchemaAndTransformer>
   consumes: string
 }
 
 export const Post = <
   Model extends AbstractModel,
-  View extends ViewModel,
+  View extends AbstractViewModel,
   State extends AbstractPostState<Model, View>
 >(
-  routeDefinition: PostRouteDefinition<View>
+  routeDefinition: PostRouteDefinition
 ): TypedMethodDecorator<ReturnsConfiguredState<View, any, State>> => {
   return Route({
     ...routeDefinition,

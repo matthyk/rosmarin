@@ -1,12 +1,10 @@
-import { AbstractModel } from '../../abstract-model'
+import { AbstractModel, ModelId } from '../../../models'
 import { AbstractState } from '../abstract-state'
-import { CollectionModelDatabaseResult } from '../../../database/results/collection-model-database-result'
+import { CollectionModelDatabaseResult } from '../../../database'
 import { HttpResponse } from '../../../router/http-response'
-import { CacheControl } from '../../caching/cache-control'
-import { PagingContext } from '../../filter/paging-context'
-import { AbstractFilter } from '../../filter/abstract-filter'
+import { CacheControl } from '../../caching'
 import { FastifyRequest } from 'fastify'
-import { ModelId } from '../../types'
+import { AbstractPagingBehaviour } from '../../pagination'
 
 export abstract class AbstractGetCollectionState<
   T extends AbstractModel
@@ -15,19 +13,18 @@ export abstract class AbstractGetCollectionState<
 
   public static readonly HEADER_NUMBEROFRESULTS = 'X-numberofresults'
 
-  protected req: FastifyRequest<{
-    Body: never
-    Params: { id: number | string }
-  }>
+  protected req: FastifyRequest<{ Body: never }>
 
   protected requestedId: ModelId
 
   protected databaseResult: CollectionModelDatabaseResult<T>
 
-  protected query: AbstractFilter<T>
+  protected pagingBehaviour: AbstractPagingBehaviour
 
   protected async buildInternal(): Promise<HttpResponse> {
     this.configureState()
+
+    this.extractFromRequest()
 
     this.logger.debug('Start of processing collection state')
 
@@ -64,7 +61,7 @@ export abstract class AbstractGetCollectionState<
 
     this.defineHttpCaching()
 
-    this.defineSelfLink()
+    this.pagingBehaviour = this.definePagingBehaviour()
 
     this.definePagingLinks()
 
@@ -107,19 +104,13 @@ export abstract class AbstractGetCollectionState<
   protected abstract defineTransitionLinks(): Promise<void> | void
 
   protected extractFromRequest(): void {
-    this.requestedId = this.req.params.id
+    this.requestedId = this.extractFromParams('id')
   }
+
+  protected abstract definePagingBehaviour(): AbstractPagingBehaviour
 
   protected definePagingLinks(): void {
-    const pagingContext: PagingContext = this.createPagingContext()
-
-    this.query.addNextPageLink(pagingContext)
-    this.query.addPrevPageLink(pagingContext)
-    this.query.addPageHeader(pagingContext)
-  }
-
-  protected defineSelfLink(): void {
-    this.query.addSelfLink(this.createPagingContext())
+    this.pagingBehaviour.build(this.response)
   }
 
   /**
@@ -129,19 +120,14 @@ export abstract class AbstractGetCollectionState<
     return AbstractGetCollectionState.HEADER_TOTALNUMBEROFRESULTS
   }
 
+  /**
+   * Override this method to change the header name value
+   */
   protected getHeaderForNumberOfResults(): string {
-    return AbstractGetCollectionState.HEADER_TOTALNUMBEROFRESULTS
+    return AbstractGetCollectionState.HEADER_NUMBEROFRESULTS
   }
 
   protected convertModelsToViews(models: T[]): T[] {
-    return models.map((m: T) => <T>this.convertModelToView(m)) // TODO
-  }
-
-  private createPagingContext(): PagingContext {
-    return new PagingContext(
-      this.req,
-      this.response,
-      this.getAcceptedMediaType()
-    )
+    return models.map((m: T) => <T>this.convertLinks(m)) // TODO
   }
 }

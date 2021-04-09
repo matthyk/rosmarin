@@ -1,7 +1,10 @@
-import { IError } from '../error-interface'
+import { IError } from '../models/error-model'
 import fastJson from 'fast-json-stringify'
-import { Constructor, StringifyFn } from './utility-types'
-import { buildSchema } from '../json-schema-builder'
+import { Constructor } from '../utility-types'
+import { buildSerializationSchema } from '../json-schema-builder/serialization-schema-builder'
+import { AbstractModel } from '../models'
+import { AbstractViewModel } from '../models'
+import { ViewConverter } from './route-definitions'
 
 const serializeErrorFn = fastJson({
   type: 'object',
@@ -28,11 +31,14 @@ const serializeErrorFn = fastJson({
 export const serializeErrorResponse = (error: IError): string =>
   serializeErrorFn(error)
 
-export const buildSerializationFn = (
-  ctor: Constructor
-): StringifyFn | undefined => {
-  if (typeof ctor === 'undefined')
-    return undefined
+export const buildViewConverter = <
+  T extends AbstractModel,
+  V extends AbstractViewModel
+>(
+  from: Constructor<T>,
+  to: Constructor<V>
+): ViewConverter | undefined => {
+  if (typeof from === 'undefined' || typeof to === 'undefined') return undefined
 
-  return fastJson(buildSchema(ctor))
+  return fastJson(buildSerializationSchema(from, to))
 }

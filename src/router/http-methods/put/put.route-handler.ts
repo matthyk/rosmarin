@@ -3,13 +3,12 @@ import { RouteHandlerMethod } from 'fastify/types/route'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { ContentNegotiator } from './put.content-negotiator'
 import { HttpResponse } from '../../http-response'
-import { handleError } from '../../error-handler'
+import { handleError, sendErrorResponse } from '../../http-error-handling'
 import { AbstractPutState } from '../../../api/states/put/abstract-put-state'
-import { AbstractModel } from '../../../api/abstract-model'
-import { ViewModel } from '../../../api/abstract-view-model'
-import { validateAndTransform } from '../../validation'
-import { Configured } from '../../../api/states/configured'
-import { sendErrorResponse } from '../send-error-reponse'
+import { AbstractModel } from '../../../models/abstract-model'
+import { AbstractViewModel } from '../../../models/abstract-view-model'
+import { validate, validateAndTransform } from '../../validation'
+import { Configured } from '../../../api/states/state.configured'
 
 export const putRouteHandler = (
   routeDefinitions: CompiledRouteDefinition[],
@@ -33,13 +32,13 @@ export const putRouteHandler = (
         negotiationResult.validationAndTransformation.body
       )
 
-      validateAndTransform(
+      validate(
         req,
         'params',
         negotiationResult.validationAndTransformation.params
       )
 
-      validateAndTransform(
+      validate(
         req,
         'query',
         negotiationResult.validationAndTransformation.query
@@ -50,7 +49,7 @@ export const putRouteHandler = (
       const httpResponse: HttpResponse = new HttpResponse(reply)
 
       const configured: Configured<
-        AbstractPutState<AbstractModel, ViewModel>
+        AbstractPutState<AbstractModel, AbstractViewModel>
       > = await controller[negotiationResult.method](req, httpResponse)
 
       await configured.state.build()
@@ -62,7 +61,7 @@ export const putRouteHandler = (
         } else {
           reply
             .type(negotiationResult.produces)
-            .serializer(negotiationResult.stringifyFn)
+            .serializer(negotiationResult.viewConverter)
             .send(httpResponse.entity)
         }
       } else {

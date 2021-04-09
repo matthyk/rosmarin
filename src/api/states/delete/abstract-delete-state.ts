@@ -1,10 +1,11 @@
-import { AbstractModel } from '../../abstract-model'
+import { AbstractModel, ModelId } from '../../../models'
 import { AbstractState } from '../abstract-state'
-import { ModelId } from '../../types'
-import { SingleModelDatabaseResult } from '../../../database/results/single-model-database-result'
-import { NoContentDatabaseResult } from '../../../database/results/no-content-database-result'
+import {
+  NoContentDatabaseResult,
+  SingleModelDatabaseResult,
+} from '../../../database'
 import { HttpResponse } from '../../../router/http-response'
-import { createEtag } from '../../caching/etag-generator'
+import { createEtag } from '../../caching'
 import { FastifyRequest } from 'fastify'
 
 export abstract class AbstractDeleteState<
@@ -20,7 +21,7 @@ export abstract class AbstractDeleteState<
 
   protected responseStatus200 = false
 
-  protected req: FastifyRequest<{ Params: { id: ModelId } }>
+  protected req: FastifyRequest
 
   protected async buildInternal(): Promise<HttpResponse> {
     this.configureState()
@@ -95,14 +96,12 @@ export abstract class AbstractDeleteState<
 
   private defineHttpResponseBody(): void {
     if (this.responseStatus200) {
-      this.response.entity = this.convertModelToView(
-        this.dbResultAfterGet.result
-      )
+      this.response.entity = this.convertLinks(this.dbResultAfterGet.result)
     }
   }
 
   protected extractFromRequest(): void {
-    this.modelIdToDelete = this.req.params.id
+    this.modelIdToDelete = this.extractFromParams('id')
   }
 
   protected abstract defineTransitionLinks(): Promise<void> | void

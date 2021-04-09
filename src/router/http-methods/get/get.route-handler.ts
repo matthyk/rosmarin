@@ -1,14 +1,13 @@
 import { CompiledRouteDefinition } from '../../route-definitions'
 import { RouteHandlerMethod } from 'fastify/types/route'
 import { FastifyReply, FastifyRequest } from 'fastify'
-import { validateAndTransform } from '../../validation'
+import { validate } from '../../validation'
 import { HttpResponse } from '../../http-response'
-import { handleError } from '../../error-handler'
+import { handleError, sendErrorResponse } from '../../http-error-handling'
 import { AbstractGetState } from '../../../api/states/get/abstract-get-state'
-import { AbstractModel } from '../../../api/abstract-model'
-import { Configured } from '../../../api/states/configured'
+import { AbstractModel } from '../../../models/abstract-model'
+import { Configured } from '../../../api/states/state.configured'
 import { ContentNegotiator } from './get.content-negotiator'
-import { sendErrorResponse } from '../send-error-reponse'
 
 export const getRouteHandler = (
   routeDefinitions: CompiledRouteDefinition[],
@@ -26,13 +25,13 @@ export const getRouteHandler = (
         req.headers.accept
       )
 
-      validateAndTransform(
+      validate(
         req,
         'params',
         negotiationResult.validationAndTransformation.params
       )
 
-      validateAndTransform(
+      validate(
         req,
         'query',
         negotiationResult.validationAndTransformation.query
@@ -50,7 +49,7 @@ export const getRouteHandler = (
 
       if (httpResponse.isError === false) {
         reply
-          .serializer(negotiationResult.stringifyFn)
+          .serializer(negotiationResult.viewConverter)
           .type(negotiationResult.produces)
           .send(httpResponse.entity)
       } else {

@@ -1,6 +1,6 @@
 import { FullRouteDefinition } from '../route-definitions'
-import { Target, TypedMethodDecorator } from '../utility-types'
-import constants from '../../constants'
+import { Constructor, Target, TypedMethodDecorator } from '../../utility-types'
+import { routerMetadataStore } from '../../metadata-stores'
 
 /**
  * This method/decorator gives the user the possibility to define arbitrary controller routes. However, it is strongly
@@ -16,21 +16,10 @@ export const Route = (
     method: string | symbol,
     descriptor: PropertyDescriptor
   ): PropertyDescriptor {
-    const definitions: FullRouteDefinition[] = (Reflect.getMetadata(
-      constants.CONTROLLER_ROUTES,
-      target.constructor
-    ) ?? []) as FullRouteDefinition[]
-
-    definitions.push({
+    routerMetadataStore.addRoute(target.constructor as Constructor, {
       ...routeDefinition,
       method,
     })
-
-    Reflect.defineMetadata(
-      constants.CONTROLLER_ROUTES,
-      definitions,
-      target.constructor
-    )
 
     return descriptor
   }
