@@ -8,6 +8,7 @@ import { injectUserRepository, SingleModelDatabaseResult } from '../../database'
 import { AbstractUserModel } from '../../models/abstract-user-model'
 import { compare } from 'bcrypt'
 import { AuthenticationInfoTokenToRespond } from './authentication-info-token-to-respond'
+import { HttpError } from '../../router/errors/http-error'
 
 const jwtSecret = '123abc'
 
@@ -40,7 +41,7 @@ export class JsonWebTokenAuthenticationInfoProvider
       if (
         (await compare(credential, databaseResult.result.password)) === false
       ) {
-        return AuthenticationInfo.NOT_AUTHENTICATED
+        throw new HttpError(401, 'Unauthorized', 'Invalid password.')
       }
 
       const jwt = await sign(
@@ -80,7 +81,7 @@ export class JsonWebTokenAuthenticationInfoProvider
           databaseResult.result
         )
       } catch (e) {
-        return AuthenticationInfo.NOT_AUTHENTICATED
+        throw new HttpError(401, 'Unauthorized', 'Invalid token.')
       }
     } else {
       return AuthenticationInfo.NOT_AUTHENTICATED
