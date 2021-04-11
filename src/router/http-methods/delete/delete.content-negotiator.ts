@@ -30,6 +30,8 @@ export class ContentNegotiator {
   }
 
   public retrieveHandler(accept = '*/*'): CompiledRouteDefinition {
+    if (this.mediaTypes.length === 0) return this.routeDefinitions[0]
+
     const negotiator = new Negotiator({ headers: { accept } })
 
     const acceptedMediaTypes = negotiator.mediaTypes(this.mediaTypes)

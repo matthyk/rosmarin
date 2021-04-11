@@ -57,6 +57,8 @@ export abstract class AbstractStateWithCaching extends AbstractState {
       this.cacheControlConfigurationSet = new Set<CacheControlConfiguration>(
         cacheControlConfigurations
       )
+    } else {
+      this.cacheControlConfigurationSet = new Set<CacheControlConfiguration>() // TODO
     }
   }
 

@@ -4,9 +4,9 @@ import { FastifyReply, FastifyRequest } from 'fastify'
 import { validate } from '../../validation'
 import { HttpResponse } from '../../http-response'
 import { handleError, sendErrorResponse } from '../../http-error-handling'
-import { AbstractGetState } from '../../../api/states/get/abstract-get-state'
-import { AbstractModel } from '../../../models/abstract-model'
-import { Configured } from '../../../api/states/state.configured'
+import { AbstractGetState } from '../../../api'
+import { AbstractModel } from '../../../models'
+import { Configured } from '../../../api'
 import { ContentNegotiator } from './get.content-negotiator'
 
 export const getRouteHandler = (

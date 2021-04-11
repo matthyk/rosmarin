@@ -23,6 +23,10 @@ import { RouteHandlerMethod } from 'fastify/types/route'
 import { RouteRegistrationError } from './errors/route-registration-error'
 import { routerMetadataStore, ControllerMetadata } from '../metadata-stores'
 
+const httpVerbRegex = /GET|get|POST|post|put|PUT|DELETE|delete/
+
+const pathParameterRegex = /:/g
+
 export class Router {
   private readonly fastify: FastifyInstance
 
@@ -46,39 +50,39 @@ export class Router {
     this.addContentType = this.fastify.addContentTypeParser.bind(this.fastify)
   }
 
-  private configureFastify(): void {
+  private configureFastify(fastify: FastifyInstance): void {
     const prefix = this.getPrefix()
 
-    this.fastify.addContentTypeParser<string>(
+    fastify.addContentTypeParser<string>(
       /\+json$/,
       { parseAs: 'string' },
       this.fastify.getDefaultJsonParser('error', 'ignore')
     )
 
-    this.fastify.setErrorHandler(handleError)
-    this.fastify.setNotFoundHandler(notFound)
+    fastify.setErrorHandler(handleError)
+    fastify.setNotFoundHandler(notFound)
 
-    this.fastify.setValidatorCompiler(({ schema }) => {
+    fastify.setValidatorCompiler(({ schema }) => {
       return ajv.compile(schema)
     })
 
-    this.fastify.decorateRequest('acceptedMediaType', '')
+    fastify.decorateRequest('acceptedMediaType', '')
 
-    this.fastify.decorateRequest(
+    fastify.decorateRequest(
       'evaluateConditionalGetRequest',
       evaluateConditionalGetRequest
     )
 
-    this.fastify.decorateRequest(
+    fastify.decorateRequest(
       'evaluateConditionalPutRequest',
       evaluateConditionalPutRequest
     )
 
-    this.fastify.decorateRequest('fullUrl', function (this: FastifyRequest) {
+    fastify.decorateRequest('fullUrl', function (this: FastifyRequest) {
       return this.protocol + '://' + this.hostname + this.url
     })
 
-    this.fastify.decorateRequest('baseUrl', function (this: FastifyRequest) {
+    fastify.decorateRequest('baseUrl', function (this: FastifyRequest) {
       return this.protocol + '://' + this.hostname + prefix
     })
   }
@@ -88,14 +92,14 @@ export class Router {
   }
 
   public registerControllers(controllers: Constructor[]): void {
-    this.configureFastify()
-
     this.fastify.register(
       (
         fastify: FastifyInstance,
         _opts: unknown,
         done: (err?: Error | undefined) => void
       ) => {
+        this.configureFastify(fastify)
+
         controllers.forEach((controller: Constructor) => {
           try {
             this.registerController(controller, fastify)
@@ -140,6 +144,8 @@ export class Router {
     for (const [path, value] of Object.entries(routeStore)) {
       for (const [httpMethod, definitions] of Object.entries(value)) {
         try {
+          this.validateRegisteredRouterPath(path)
+
           /*
           We validate the route definitions before we compile and register them.
           We are very strict about this to prevent non HTTP/ REST compliant development in any case.
@@ -255,7 +261,7 @@ export class Router {
         method: definition.method,
         validationAndTransformation: {
           body: {
-            validationFn: compileSchema(definition.schema?.body),
+            validationFn: compileSchema(definition.schema?.body.schema),
             transformationFn: definition.schema?.body?.transformer,
           },
           query: compileSchema(definition.schema?.query),
@@ -265,5 +271,17 @@ export class Router {
         viewConverter: definition.viewConverter,
       }
     })
+  }
+
+  private validateRegisteredRouterPath(path: string): void {
+    if (httpVerbRegex.test(path)) {
+      this.logger.warn(
+        `Path '${path}' looks like you are using a verb in it. But that's evil and you probably shouldn't do that.`
+      )
+    }
+
+    if ((path.match(pathParameterRegex) ?? []).length >= 2) {
+      this.logger.warn(`WARNING.`) // TODO
+    }
   }
 }

@@ -8,9 +8,8 @@ import {
   TypedMethodDecorator,
 } from '../../../utility-types'
 import { Route } from '../../decorators'
-import { AbstractPostState } from '../../../api/states/post/abstract-post-state'
-import { AbstractModel } from '../../../models/abstract-model'
-import { AbstractViewModel } from '../../../models/abstract-view-model'
+import { AbstractPostState } from '../../../api'
+import { AbstractModel, AbstractViewModel } from '../../../models'
 
 export interface PostRouteDefinition {
   path?: string

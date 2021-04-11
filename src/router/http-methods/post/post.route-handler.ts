@@ -3,10 +3,8 @@ import { RouteHandlerMethod } from 'fastify/types/route'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { HttpResponse } from '../../http-response'
 import { handleError, sendErrorResponse } from '../../http-error-handling'
-import { AbstractPostState } from '../../../api/states/post/abstract-post-state'
-import { AbstractViewModel } from '../../../models/abstract-view-model'
-import { AbstractModel } from '../../../models/abstract-model'
-import { Configured } from '../../../api/states/state.configured'
+import { AbstractPostState, Configured } from '../../../api'
+import { AbstractModel, AbstractViewModel } from '../../../models'
 import { ContentNegotiator } from './post.content-negotiator'
 import { validate, validateAndTransform } from '../../validation'
 
@@ -27,7 +25,6 @@ export const postRouteHandler = (
 
       validateAndTransform(
         req,
-        'body',
         negotiationResult.validationAndTransformation.body
       )
 

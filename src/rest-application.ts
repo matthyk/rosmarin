@@ -4,8 +4,7 @@ import { ApplicationConfig, LoggingOptions } from './application-config'
 import { Constructor } from './utility-types'
 import { container } from 'tsyringe'
 import constants from './constants'
-import { NoApiKeyProvider } from './api'
-import { JsonWebTokenAuthenticationInfoProvider } from './api/security/json-web-token-authentication-info-provider'
+import { NoApiKeyProvider, NoAuthenticationInfoProvider } from './api'
 
 export class RestApplication {
   private router: Router
@@ -48,7 +47,7 @@ export class RestApplication {
       )
       container.register(
         constants.AUTHENTICATION_INFO_PROVIDER,
-        JsonWebTokenAuthenticationInfoProvider
+        NoAuthenticationInfoProvider
       )
     }
 

@@ -17,6 +17,15 @@ const deletePropertyInObject = (object: any, key: string | symbol): void => {
   object[key] = undefined
 }
 
+const isConstructorOfPrimitiveValue = (ctor: Constructor<unknown>): boolean => {
+  return (
+    ctor.name.toLowerCase() === 'string' ||
+    ctor.name.toLowerCase() === 'number' ||
+    ctor.name.toLowerCase() === 'bigint ' ||
+    ctor.name.toLowerCase() === 'boolean'
+  )
+}
+
 const copyFromSourceToTarget = (
   source: any,
   target: any,
@@ -29,7 +38,7 @@ const copyFromSourceToTarget = (
 export const merge = <T extends AbstractModel>(
   source: AbstractViewModel,
   target: T,
-  logger: Logger = Pino({ prettyPrint: true, level: 'trace' })
+  logger: Logger = Pino({ prettyPrint: true, level: 'info' })
 ): T => {
   try {
     const sourceProperties: Property[] = viewMetadataStore.getProperties(
@@ -92,45 +101,47 @@ export const merge = <T extends AbstractModel>(
                 'The type cannot be determined. Please fix this issue. Any resource in the view that cannot be found in the model is skipped.'
               )
             }
-          }
+          } else if (isConstructorOfPrimitiveValue(constructor)) {
+            ;(target as any)[propertyName] = (source as any)[propertyName]
+          } else {
+            for (const resource of propertyValueInSource) {
+              const resourceId: ModelId = resource.id
 
-          for (const resource of propertyValueInSource) {
-            const resourceId: ModelId = resource.id
+              // check if this resource also exists in the target model
+              const found: unknown | undefined = propertyValueInTarget.find(
+                (value: any) => value.id == resourceId
+              ) // TODO how should we search for this?
 
-            // check if this resource also exists in the target model
-            const found: unknown | undefined = propertyValueInTarget.find(
-              (value: any) => value.id == resourceId
-            ) // TODO how should we search for this?
+              // if it does not exist we have to instantiate it
+              if (
+                typeof found === 'undefined' &&
+                typeof constructor !== 'undefined'
+              ) {
+                const newInstance = new constructor()
 
-            // if it does not exist we have to instantiate it
-            if (
-              typeof found === 'undefined' &&
-              typeof constructor !== 'undefined'
-            ) {
-              const newInstance = new constructor()
+                ;(target as any)[propertyName].push(newInstance)
 
-              ;(target as any)[propertyName].push(newInstance)
-
-              merge(resource, newInstance)
-            } else if (typeof found !== 'undefined') {
-              merge(resource, found as AbstractModel)
-            } else {
-              logger.trace(
-                `Resource in view ${source.constructor.name}${
-                  resourceId ? ' with ID ' + resourceId : ''
-                } is skipped.`
-              )
+                merge(resource, newInstance)
+              } else if (typeof found !== 'undefined') {
+                merge(resource, found as AbstractModel)
+              } else {
+                logger.trace(
+                  `Resource in view ${source.constructor.name}${
+                    resourceId ? ' with ID ' + resourceId : ''
+                  } is skipped.`
+                )
+              }
             }
-          }
 
-          for (let i = 0; i < propertyValueInTarget.length; i++) {
-            const resourceId = propertyValueInTarget[i].id
+            for (let i = 0; i < propertyValueInTarget.length; i++) {
+              const resourceId = propertyValueInTarget[i].id
 
-            if (
-              typeof propertyValueInSource.find((e) => e.id == resourceId) ===
-              'undefined'
-            ) {
-              propertyValueInTarget.splice(i, 1)
+              if (
+                typeof propertyValueInSource.find((e) => e.id == resourceId) ===
+                'undefined'
+              ) {
+                propertyValueInTarget.splice(i, 1)
+              }
             }
           }
 

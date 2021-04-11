@@ -86,7 +86,7 @@ const buildObjectSchema = <
   model: Constructor<T>,
   view: Constructor<V>
 ): JsonSchema => {
-  const validationProperties: ValidationProperty[] = validationMetadataStore.getValidationProperties(
+  const validationProperties: ValidationProperty[] = validationMetadataStore.getProperties(
     view
   )
   const schemaOptions = validationMetadataStore.getSchemaForView(view)

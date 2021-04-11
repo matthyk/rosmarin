@@ -4,12 +4,16 @@ import { AbstractDatabaseResult } from './abstract-database-result'
 export class CollectionModelDatabaseResult<
   T extends AbstractModel = AbstractModel
 > extends AbstractDatabaseResult {
-  protected _databaseResult: T[]
+  private _databaseResult: T[]
 
   public totalNumberOfResult = 0
 
   public get databaseResult(): T[] {
     return this._databaseResult
+  }
+
+  public set databaseResult(value: T[]) {
+    this._databaseResult = Array.isArray(value) ? value : []
   }
 
   constructor()

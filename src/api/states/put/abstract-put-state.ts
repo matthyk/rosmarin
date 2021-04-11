@@ -99,6 +99,7 @@ export abstract class AbstractPutState<
 
   private mergeViewModelIntoDatabaseModel(): void {
     this.modelInDatabase = merge(this.modelToUpdate, this.modelInDatabase)
+    this.modelInDatabase.lastModifiedAt = Date.now()
   }
 
   protected abstract updateModelInDatabase(): Promise<NoContentDatabaseResult>

@@ -49,7 +49,7 @@ export abstract class AbstractState {
   protected constructor() {
     this.logger = container
       .resolve<Logger>(constants.LOGGER)
-      .child({ context: this.constructor.name })
+      .child({ state: this.constructor.name })
 
     this.authenticationInfoProvider = container.resolve<IAuthenticationInfoProvider>(
       constants.AUTHENTICATION_INFO_PROVIDER
@@ -162,7 +162,7 @@ export abstract class AbstractState {
   ): T | undefined {
     let value: string | number | boolean = (this.req as any)[from][key]
 
-    if (options.throwIfUndefined === true) {
+    if (typeof value === 'undefined' && options.throwIfUndefined === true) {
       throw new HttpError(
         400,
         'Bad Request',
@@ -229,7 +229,7 @@ export abstract class AbstractState {
     return this.extractFrom<string>(
       'query',
       key,
-      'number',
+      'string',
       defaultValue,
       options
     )
@@ -271,7 +271,7 @@ export abstract class AbstractState {
     return this.extractFrom<string>(
       'params',
       key,
-      'number',
+      'string',
       defaultValue,
       options
     )
@@ -312,7 +312,7 @@ export abstract class AbstractState {
     return this.extractFrom<string>(
       'headers',
       key,
-      'number',
+      'string',
       defaultValue,
       options
     )

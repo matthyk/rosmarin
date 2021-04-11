@@ -4,11 +4,10 @@ import { FastifyReply, FastifyRequest } from 'fastify'
 import { ContentNegotiator } from './put.content-negotiator'
 import { HttpResponse } from '../../http-response'
 import { handleError, sendErrorResponse } from '../../http-error-handling'
-import { AbstractPutState } from '../../../api/states/put/abstract-put-state'
-import { AbstractModel } from '../../../models/abstract-model'
-import { AbstractViewModel } from '../../../models/abstract-view-model'
+import { AbstractPutState, Configured } from '../../../api'
+import { AbstractModel, AbstractViewModel } from '../../../models'
 import { validate, validateAndTransform } from '../../validation'
-import { Configured } from '../../../api/states/state.configured'
+import constants from '../../../constants'
 
 export const putRouteHandler = (
   routeDefinitions: CompiledRouteDefinition[],
@@ -22,13 +21,12 @@ export const putRouteHandler = (
   return async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
     try {
       const negotiationResult: CompiledRouteDefinition = contentNegotiator.retrieveHandler(
-        req.headers.accept,
-        req.headers['content-type']
+        req.headers['content-type'],
+        req.headers.accept
       )
 
       validateAndTransform(
         req,
-        'body',
         negotiationResult.validationAndTransformation.body
       )
 
@@ -54,13 +52,13 @@ export const putRouteHandler = (
 
       await configured.state.build()
 
-      if (httpResponse.isError) {
+      if (httpResponse.isError === false) {
         if (typeof httpResponse.entity === 'undefined') {
           reply.removeHeader('content-type')
           reply.send()
         } else {
           reply
-            .type(negotiationResult.produces)
+            .type(negotiationResult.produces ?? constants.DEFAULT_MEDIA_TYPE)
             .serializer(negotiationResult.viewConverter)
             .send(httpResponse.entity)
         }

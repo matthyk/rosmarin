@@ -63,7 +63,7 @@ export abstract class AbstractPostState<
 
   protected defineLocationLink(): void {
     const locationLink: string =
-      this.req.fullUrl() + this.modelToStoreInDatabase.id
+      this.req.fullUrl() + '/' + this.modelToStoreInDatabase.id
     this.response.location(locationLink)
     this.response.created()
   }

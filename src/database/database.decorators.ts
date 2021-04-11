@@ -1,9 +1,11 @@
 import { Constructor } from '../utility-types'
-import { container, inject, Lifecycle } from 'tsyringe'
+import { container, inject, Lifecycle, singleton } from 'tsyringe'
+import constructor from 'tsyringe/dist/typings/types/constructor'
+import { AbstractRepository } from './repositories/abstract-repository'
 
-export const Repository = (target: Constructor): void => {
-  container.registerSingleton(target)
-}
+export const Repository = <T extends AbstractRepository>(
+  _: Constructor<T>
+): ((target: constructor<T>) => void) => singleton
 
 export const UserRepository = (target: Constructor): void => {
   container.register('UserRepository', target, {

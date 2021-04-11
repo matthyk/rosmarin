@@ -49,7 +49,7 @@ export const buildArrayPropertySchema = <T extends AbstractViewModel>(
 export const buildObjectSchema = <T extends AbstractViewModel>(
   ctor: Constructor<T>
 ): JsonSchema => {
-  const validationProperties: ValidationProperty[] = validationMetadataStore.getValidationProperties(
+  const validationProperties: ValidationProperty[] = validationMetadataStore.getProperties(
     ctor
   )
   const schemaOptions: SchemaOptions = validationMetadataStore.getSchemaForView(

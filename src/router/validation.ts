@@ -9,7 +9,7 @@ import { Constructor } from '../utility-types'
 import { plainToClass } from 'class-transformer'
 import { buildValidationSchema } from '../json-schema-builder'
 import { FastifyRequest } from 'fastify'
-import { AbstractViewModel } from '../models/abstract-view-model'
+import { AbstractViewModel } from '../models'
 
 const ajv = new Ajv({
   removeAdditional: true,
@@ -37,29 +37,26 @@ export const validate = (
 
 export const validateAndTransform = (
   req: FastifyRequest,
-  toValidate: 'body' | 'params' | 'query',
   validatorAndTransformer: ValidatorAndTransformer
 ): void => {
   if (
-    typeof toValidate === 'undefined' ||
+    typeof validatorAndTransformer?.transformationFn === 'undefined' ||
     typeof validatorAndTransformer?.validationFn !== 'function'
   )
     return
 
   const isValid:
     | boolean
-    | PromiseLike<unknown> = validatorAndTransformer.validationFn(
-    req[toValidate]
-  )
+    | PromiseLike<unknown> = validatorAndTransformer.validationFn(req.body)
 
   if (!isValid)
     throw new RouterError(
       422,
       'Unprocessable Entity',
-      `Validation of the request ${toValidate} failed.`
+      `Validation of the request body failed.`
     )
 
-  req[toValidate] = validatorAndTransformer.transformationFn(req[toValidate])
+  req.body = validatorAndTransformer.transformationFn(req.body)
 }
 
 export const buildValidatorAndTransformer = <T extends AbstractViewModel>(
@@ -77,7 +74,8 @@ export const buildValidatorAndTransformer = <T extends AbstractViewModel>(
 
 export const compileSchema = (
   schema?: JsonSchema
-): ValidateFunction | undefined =>
-  typeof schema === 'undefined' ? undefined : ajv.compile(schema)
+): ValidateFunction | undefined => {
+  return typeof schema === 'undefined' ? undefined : ajv.compile(schema)
+}
 
 export default ajv

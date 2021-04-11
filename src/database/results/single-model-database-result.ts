@@ -13,7 +13,7 @@ export class SingleModelDatabaseResult<
   constructor(result?: T) {
     super()
     this._result = result
-    this.found = result !== undefined
+    this.found = typeof result !== 'undefined'
   }
 
   public get result(): T {

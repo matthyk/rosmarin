@@ -6,7 +6,7 @@ import {
   ValidationProperty,
   TypeFn,
 } from '../../metadata-stores'
-import { AbstractViewModel } from '../../models/abstract-view-model'
+import { AbstractViewModel } from '../../models'
 
 export type SchemaOptions = Record<string, any>
 
@@ -35,7 +35,7 @@ export const viewArrayProp = (
     schemaOptions,
   }
 
-  validationMetadataStore.addValidationProperty(
+  validationMetadataStore.addProperty(
     target.constructor as Constructor<AbstractViewModel>,
     validationProperty
   )
@@ -61,7 +61,7 @@ export const viewProp = (
     }
   )
 
-  validationMetadataStore.addValidationProperty(
+  validationMetadataStore.addProperty(
     target.constructor as Constructor<AbstractViewModel>,
     {
       name: propertyKey.toString(),

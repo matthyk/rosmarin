@@ -12,7 +12,7 @@ import { ViewConverter } from '../../route-definitions'
  * See https://tools.ietf.org/html/rfc7231#section-4.3.1
  */
 export interface GetRouteDefinition {
-  path?: string
+  path: string
   viewConverter: ViewConverter
   produces: string
 }

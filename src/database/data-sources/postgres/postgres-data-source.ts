@@ -6,7 +6,7 @@ import { PostgresClient } from './postgres-client'
 import constants from '../../../constants'
 
 @singleton()
-export class PostgresDataSource {
+export class PostgresDataSource<V = unknown> {
   private readonly pool: Pool
   private readonly logger: Logger
 
@@ -25,7 +25,7 @@ export class PostgresDataSource {
     })
   }
 
-  public async query<T>(
+  public async query<T = V>(
     query: string,
     ...params: unknown[]
   ): Promise<QueryResult<T>> {

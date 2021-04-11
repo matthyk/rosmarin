@@ -2,9 +2,14 @@ import { Constructor } from '../../utility-types'
 import { AbstractViewModel } from '../../models'
 import { SchemaOptions } from '../../api'
 import { ValidationProperty } from './validation-property'
-import { AbstractMetadataStore } from '../abstract-metadata-store'
+import { AbstractPropertyStore } from '../abstract-property-store'
 
-export class ValidationMetadataStore extends AbstractMetadataStore {
+/**
+ * Currently does not support inheritance
+ */
+export class ValidationMetadataStore<
+  T extends AbstractViewModel
+> extends AbstractPropertyStore<T, ValidationProperty> {
   private viewSchemaOptions = new Map<
     Constructor<AbstractViewModel>,
     SchemaOptions
@@ -13,11 +18,6 @@ export class ValidationMetadataStore extends AbstractMetadataStore {
   private collectionViewSchemaOptions = new Map<
     Constructor<AbstractViewModel>,
     SchemaOptions
-  >()
-
-  private validationProperties = new Map<
-    Constructor<AbstractViewModel>,
-    ValidationProperty[]
   >()
 
   public addSchemaForView<T extends AbstractViewModel>(
@@ -44,33 +44,6 @@ export class ValidationMetadataStore extends AbstractMetadataStore {
     ctor: Constructor<T>
   ): SchemaOptions | undefined {
     return this.collectionViewSchemaOptions.get(ctor)
-  }
-
-  public addValidationProperty<T extends AbstractViewModel>(
-    ctor: Constructor<T>,
-    validationProperty: ValidationProperty
-  ): void {
-    if (this.validationProperties.has(ctor) === false) {
-      this.validationProperties.set(ctor, [])
-    }
-
-    this.validationProperties.get(ctor).push(validationProperty)
-  }
-
-  public getValidationProperties<T extends AbstractViewModel>(
-    ctor: Constructor<T>
-  ): ValidationProperty[] {
-    return this.mergeMapWithArrays(ctor, this.validationProperties) ?? []
-  }
-
-  public getValidationProperty<T extends AbstractViewModel>(
-    ctor: Constructor<T>,
-    propertyName: string
-  ): ValidationProperty | undefined {
-    return this.getValidationProperties(ctor).find(
-      (validationProperty: ValidationProperty) =>
-        validationProperty.name === propertyName
-    )
   }
 }
 

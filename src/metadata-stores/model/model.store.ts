@@ -2,10 +2,14 @@ import { Constructor } from '../../utility-types'
 import { AbstractModel } from '../../models'
 import { LinkProperty } from '../../api'
 import { AbstractPropertyStore } from '../abstract-property-store'
+import { Property } from '../property'
 
+/**
+ * Link properties does not support inheritance
+ */
 export class ModelMetadataStore<
   T extends AbstractModel
-> extends AbstractPropertyStore<T> {
+> extends AbstractPropertyStore<T, Property> {
   private links = new Map<Constructor<AbstractModel>, LinkProperty[]>()
 
   public addLinkProperty<T extends AbstractModel>(

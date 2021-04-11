@@ -185,4 +185,25 @@ describe('view merger', () => {
     expect(model.embedded.deep).toBeInstanceOf(DeepEmbeddedResourceModel)
     expect(model.embedded.deep.prop).toEqual('hello')
   })
+
+  it('should create array of primitive values in target', () => {
+    class SimpleModel extends AbstractModel {
+      @modelArrayProp(() => String)
+      strings: string[]
+    }
+
+    class SimpleView extends AbstractViewModel {
+      @viewArrayProp(() => String)
+      strings: string[]
+    }
+
+    let model = new SimpleModel()
+
+    const view = new SimpleView()
+    view.strings = ['test']
+
+    model = merge(view, model)
+
+    expect(model.strings).toEqual(['test'])
+  })
 })

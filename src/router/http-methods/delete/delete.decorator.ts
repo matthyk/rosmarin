@@ -12,7 +12,7 @@ import { ViewConverter } from '../../route-definitions'
  * See https://tools.ietf.org/html/rfc7231#section-4.3.5
  */
 export interface DeleteRouteDefinition {
-  path?: string
+  path: string
   viewConverter?: ViewConverter
   produces?: string
 }
@@ -21,7 +21,7 @@ export const Delete = <
   Model extends AbstractModel,
   State extends AbstractDeleteState<Model>
 >(
-  routeDefinition: DeleteRouteDefinition = {}
+  routeDefinition: DeleteRouteDefinition = { path: '/:id' }
 ): TypedMethodDecorator<ReturnsConfiguredState<never, any, State>> => {
   return Route({
     ...routeDefinition,

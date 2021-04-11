@@ -2,17 +2,14 @@ import { IAuthenticationInfoProvider } from './authentication-info-provider'
 import { AuthenticationInfo } from './authentication-info'
 import { AuthenticationHeader } from './authentication-header'
 import { IUserRepository } from '../../database/repositories/user.repository'
-import { singleton } from 'tsyringe'
 import { sign, verify } from 'jsonwebtoken'
 import { injectUserRepository, SingleModelDatabaseResult } from '../../database'
 import { AbstractUserModel } from '../../models/abstract-user-model'
 import { compare } from 'bcrypt'
 import { AuthenticationInfoTokenToRespond } from './authentication-info-token-to-respond'
 import { HttpError } from '../../router/errors/http-error'
+import { jwtSecret } from './secrets'
 
-const jwtSecret = '123abc'
-
-@singleton()
 export class JsonWebTokenAuthenticationInfoProvider
   implements IAuthenticationInfoProvider {
   constructor(
@@ -32,7 +29,7 @@ export class JsonWebTokenAuthenticationInfoProvider
       const principal = authenticationHeader.principal
       const credential = authenticationHeader.credential
 
-      const databaseResult: SingleModelDatabaseResult<AbstractUserModel> = await this.userRepository.readUserByPrincipal(
+      const databaseResult: SingleModelDatabaseResult<AbstractUserModel> = await this.userRepository.readByPrincipal(
         principal
       )
 
@@ -49,7 +46,10 @@ export class JsonWebTokenAuthenticationInfoProvider
           userId: databaseResult.result.id,
           roles: databaseResult.result.roles,
         },
-        jwtSecret
+        jwtSecret,
+        {
+          expiresIn: '1h',
+        }
       )
 
       return AuthenticationInfo.withTokenToRespondAndPrincipal(
@@ -70,7 +70,7 @@ export class JsonWebTokenAuthenticationInfoProvider
           jwtSecret
         )) as AbstractUserModel
 
-        const databaseResult: SingleModelDatabaseResult<AbstractUserModel> = await this.userRepository.readUserById(
+        const databaseResult: SingleModelDatabaseResult<AbstractUserModel> = await this.userRepository.readById(
           decoded.id
         )
 

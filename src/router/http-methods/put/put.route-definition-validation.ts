@@ -14,7 +14,7 @@ export const validatePutRoutes = (
       )
     }
 
-    if (typeof definition.schema?.body !== 'function') {
+    if (typeof definition.schema?.body.transformer !== 'function') {
       throw new RouteRegistrationError(
         `Route handler "${
           controller + '.' + definition.method.toString()
