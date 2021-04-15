@@ -17,7 +17,9 @@ const deletePropertyInObject = (object: any, key: string | symbol): void => {
   object[key] = undefined
 }
 
-const isConstructorOfPrimitiveValue = (ctor: Constructor<unknown>): boolean => {
+export const isConstructorOfPrimitiveValue = (
+  ctor: Constructor<unknown>
+): boolean => {
   return (
     ctor.name.toLowerCase() === 'string' ||
     ctor.name.toLowerCase() === 'number' ||
