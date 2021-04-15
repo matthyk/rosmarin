@@ -103,6 +103,15 @@ export abstract class AbstractState {
   }
 
   public async build(): Promise<void> {
+    if (
+      typeof this.req === 'undefined' ||
+      typeof this.response === 'undefined'
+    ) {
+      this.logger.error(
+        'Please configure the state before you call the build() method.'
+      )
+    }
+
     await this.buildInternal()
   }
 
@@ -417,7 +426,11 @@ export abstract class AbstractState {
   /**
    * Override this methods in specific sub-classes
    */
-  protected convertLinks(model: AbstractModel): AbstractModel {
-    return convertLinks(model, this.req.baseUrl())
+  protected convertLinks(models: AbstractModel): AbstractModel
+  protected convertLinks(models: AbstractModel[]): AbstractModel[]
+  protected convertLinks(
+    models: AbstractModel | AbstractModel[]
+  ): AbstractModel | AbstractModel[] {
+    return convertLinks(<AbstractModel>models, this.req.baseUrl())
   }
 }

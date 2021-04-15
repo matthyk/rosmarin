@@ -1,4 +1,4 @@
-import { AbstractModel } from '../../models/abstract-model'
+import { AbstractModel } from '../../models'
 import { LinkProperty } from './link'
 import { modelMetadataStore, Property } from '../../metadata-stores'
 

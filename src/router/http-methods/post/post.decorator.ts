@@ -3,10 +3,7 @@ import {
   JsonSchemaAndTransformer,
   Schemas,
 } from '../../route-definitions'
-import {
-  ReturnsConfiguredState,
-  TypedMethodDecorator,
-} from '../../../utility-types'
+import { ReturnsConfiguredState, TypedMethodDecorator } from '../../types'
 import { Route } from '../../decorators'
 import { AbstractPostState } from '../../../api'
 import { AbstractModel, AbstractViewModel } from '../../../models'
@@ -18,12 +15,10 @@ export interface PostRouteDefinition {
 }
 
 export const Post = <
-  Model extends AbstractModel,
-  View extends AbstractViewModel,
-  State extends AbstractPostState<Model, View>
+  State extends AbstractPostState<AbstractModel, AbstractViewModel>
 >(
   routeDefinition: PostRouteDefinition
-): TypedMethodDecorator<ReturnsConfiguredState<View, any, State>> => {
+): TypedMethodDecorator<ReturnsConfiguredState<State>> => {
   return Route({
     ...routeDefinition,
     httpMethod: 'POST',

@@ -1,4 +1,4 @@
-import { Constructor } from '../../utility-types'
+import { Constructor } from '../../types'
 import { AbstractViewModel } from '../../models'
 import { SchemaOptions } from '../../api'
 import { ValidationProperty } from './validation-property'

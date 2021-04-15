@@ -87,9 +87,7 @@ export abstract class AbstractGetCollectionState<
   }
 
   protected defineHttpResponseBody(): void {
-    this.response.entity = this.convertModelsToViews(
-      this.databaseResult.databaseResult
-    )
+    this.response.entity = this.convertLinks(this.databaseResult.databaseResult)
   }
 
   protected defineHttpCaching(): void {
@@ -103,9 +101,7 @@ export abstract class AbstractGetCollectionState<
 
   protected abstract defineTransitionLinks(): Promise<void> | void
 
-  protected extractFromRequest(): void {
-    this.requestedId = this.extractFromParams('id')
-  }
+  protected extractFromRequest(): void {}
 
   protected abstract definePagingBehaviour(): AbstractPagingBehaviour
 
@@ -125,9 +121,5 @@ export abstract class AbstractGetCollectionState<
    */
   protected getHeaderForNumberOfResults(): string {
     return AbstractGetCollectionState.HEADER_NUMBEROFRESULTS
-  }
-
-  protected convertModelsToViews(models: T[]): T[] {
-    return models.map((m: T) => <T>this.convertLinks(m)) // TODO
   }
 }

@@ -1,4 +1,4 @@
-import { Constructor } from '../../utility-types'
+import { Constructor } from '../../types'
 import { AbstractModel } from '../../models'
 import { LinkProperty } from '../../api'
 import { AbstractPropertyStore } from '../abstract-property-store'

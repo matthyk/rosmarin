@@ -1,4 +1,4 @@
-import { Constructor, Target } from '../../utility-types'
+import { Constructor, Target } from '../../types'
 import { AbstractModel } from '../../models'
 import { modelMetadataStore, TypeFn } from '../../metadata-stores'
 

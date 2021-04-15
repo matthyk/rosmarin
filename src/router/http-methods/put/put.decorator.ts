@@ -4,14 +4,11 @@ import {
   Schemas,
   ViewConverter,
 } from '../../route-definitions'
-import {
-  ReturnsConfiguredState,
-  TypedMethodDecorator,
-} from '../../../utility-types'
+import { ReturnsConfiguredState, TypedMethodDecorator } from '../../types'
 import { Route } from '../../decorators'
-import { AbstractPutState } from '../../../api/states/put/abstract-put-state'
-import { AbstractModel } from '../../../models/abstract-model'
-import { AbstractViewModel } from '../../../models/abstract-view-model'
+import { AbstractPutState } from '../../../api'
+import { AbstractModel } from '../../../models'
+import { AbstractViewModel } from '../../../models'
 
 export interface PutRouteDefinition {
   path?: string
@@ -22,15 +19,13 @@ export interface PutRouteDefinition {
 }
 
 export const Put = <
-  Model extends AbstractModel,
-  View extends AbstractViewModel,
-  State extends AbstractPutState<Model, View>
+  State extends AbstractPutState<AbstractModel, AbstractViewModel>
 >(
   routeDefinition: PutRouteDefinition
-): TypedMethodDecorator<ReturnsConfiguredState<View, any, State>> => {
+): TypedMethodDecorator<ReturnsConfiguredState<State>> => {
   return Route({
+    path: '/:id',
     ...routeDefinition,
     httpMethod: 'PUT',
-    viewConverter: routeDefinition.viewConverter,
   })
 }

@@ -1,6 +1,7 @@
 import { FullRouteDefinition } from '../route-definitions'
-import { Constructor, Target, TypedMethodDecorator } from '../../utility-types'
+import { Constructor, Target } from '../../types'
 import { routerMetadataStore } from '../../metadata-stores'
+import { TypedMethodDecorator } from '../types'
 
 /**
  * This method/decorator gives the user the possibility to define arbitrary controller routes. However, it is strongly

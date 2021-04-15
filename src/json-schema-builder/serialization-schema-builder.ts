@@ -1,4 +1,4 @@
-import { Constructor } from '../utility-types'
+import { Constructor } from '../types'
 import { SchemaOptions } from '../api'
 import {
   isArray,

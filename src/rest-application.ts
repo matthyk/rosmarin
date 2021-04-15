@@ -1,10 +1,15 @@
 import { Router } from './router'
 import Pino, { Logger } from 'pino'
 import { ApplicationConfig, LoggingOptions } from './application-config'
-import { Constructor } from './utility-types'
+import { Constructor } from './types'
 import { container } from 'tsyringe'
 import constants from './constants'
-import { NoApiKeyProvider, NoAuthenticationInfoProvider } from './api'
+import {
+  IApiKeyInfoProvider,
+  IAuthenticationInfoProvider,
+  NoApiKeyProvider,
+  NoAuthenticationInfoProvider,
+} from './api'
 
 export class RestApplication {
   private router: Router
@@ -43,7 +48,7 @@ export class RestApplication {
       container.isRegistered(constants.AUTHENTICATION_INFO_PROVIDER) === false
     ) {
       this.logger.info(
-        `No AuthenticationInfoProvider registered. The JsonWebTokenAuthenticationInfoProvider will be used. You can register a custom provider with @AuthenticationInfoProvider.`
+        `No AuthenticationInfoProvider registered. The NoAuthenticationInfoProvider will be used. Please register a provider with @AuthenticationInfoProvider.`
       )
       container.register(
         constants.AUTHENTICATION_INFO_PROVIDER,
@@ -61,6 +66,25 @@ export class RestApplication {
     container.registerInstance(constants.LOGGER, this.logger)
   }
 
+  public registerApiKeyInfoProvider(
+    provider: Constructor<IApiKeyInfoProvider>
+  ): void {
+    container.registerSingleton(constants.API_KEY_INFO_PROVIDER, provider)
+  }
+
+  public registerAuthenticationInfoProvider(
+    provider: Constructor<IAuthenticationInfoProvider>
+  ): void {
+    container.registerSingleton(
+      constants.AUTHENTICATION_INFO_PROVIDER,
+      provider
+    )
+  }
+
+  public registerController(...controllers: Constructor[]): void {
+    this.controllers.push(...controllers)
+  }
+
   public async start(port = 8080, host = '127.0.0.1'): Promise<void> {
     try {
       this.router.registerControllers(this.controllers)
@@ -75,10 +99,6 @@ export class RestApplication {
 
       process.exit(1)
     }
-  }
-
-  public register(...controllers: Constructor[]): void {
-    this.controllers.push(...controllers)
   }
 }
 

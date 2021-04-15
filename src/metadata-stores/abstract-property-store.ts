@@ -1,5 +1,5 @@
 import { Property } from './property'
-import { Constructor } from '../utility-types'
+import { Constructor } from '../types'
 
 /**
  * We take the overhead at build time to avoid the time-consuming search for properties in all super classes at runtime.

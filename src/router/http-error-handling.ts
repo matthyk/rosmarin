@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify'
-import { CacheControl } from '../api/caching'
+import { CacheControl } from '../api'
 import { RouterError } from './errors/router-error'
 import { serializeErrorResponse } from './serialization'
 import { HttpError } from './errors/http-error'

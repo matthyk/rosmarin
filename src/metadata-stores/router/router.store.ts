@@ -1,4 +1,4 @@
-import { Constructor } from '../../utility-types'
+import { Constructor } from '../../types'
 import { ControllerMetadata } from './controller-metadata'
 import { FullRouteDefinition } from '../../router/route-definitions'
 

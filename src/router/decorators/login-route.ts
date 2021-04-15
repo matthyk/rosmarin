@@ -1,9 +1,7 @@
-import {
-  ReturnsConfiguredState,
-  TypedMethodDecorator,
-} from '../../utility-types'
+import {} from '../../types'
 import { LoginState } from '../../api/states/login-state'
 import { Route } from './route'
+import { TypedMethodDecorator } from '../types'
 
 export interface LoginRouteDefinition {
   path?: string
@@ -11,7 +9,7 @@ export interface LoginRouteDefinition {
 
 export const Login = (
   routeDefinition: LoginRouteDefinition = {}
-): TypedMethodDecorator<ReturnsConfiguredState<never, any, LoginState>> => {
+): TypedMethodDecorator<LoginState> => {
   return Route({
     ...routeDefinition,
     httpMethod: 'GET',

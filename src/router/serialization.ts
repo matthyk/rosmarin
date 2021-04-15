@@ -1,6 +1,6 @@
 import { IError } from '../models/error-model'
 import fastJson from 'fast-json-stringify'
-import { Constructor } from '../utility-types'
+import { Constructor } from '../types'
 import { buildSerializationSchema } from '../json-schema-builder/serialization-schema-builder'
 import { AbstractModel } from '../models'
 import { AbstractViewModel } from '../models'

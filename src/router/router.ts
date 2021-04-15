@@ -3,7 +3,7 @@ import fastify, {
   FastifyInstance,
   FastifyRequest,
 } from 'fastify'
-import { Constructor, RouteStore } from '../utility-types'
+import { RouteStore } from './types'
 import { HttpMethod, validateRouteDefinitions } from './http-methods'
 import { Logger } from 'pino'
 import {
@@ -22,6 +22,8 @@ import {
 import { RouteHandlerMethod } from 'fastify/types/route'
 import { RouteRegistrationError } from './errors/route-registration-error'
 import { routerMetadataStore, ControllerMetadata } from '../metadata-stores'
+import { sanitizeUrl } from './santizieUrl'
+import { Constructor } from '../types'
 
 const httpVerbRegex = /GET|get|POST|post|put|PUT|DELETE|delete/
 
@@ -79,11 +81,11 @@ export class Router {
     )
 
     fastify.decorateRequest('fullUrl', function (this: FastifyRequest) {
-      return this.protocol + '://' + this.hostname + this.url
+      return sanitizeUrl(this.protocol + '://' + this.hostname + this.url)
     })
 
     fastify.decorateRequest('baseUrl', function (this: FastifyRequest) {
-      return this.protocol + '://' + this.hostname + prefix
+      return sanitizeUrl(this.protocol + '://' + this.hostname + prefix)
     })
   }
 
@@ -117,8 +119,7 @@ export class Router {
   }
 
   private getPrefix(): string {
-    if (this.routerConfig.prefix)
-      return Router.sanitizeUrl(this.routerConfig.prefix, '')
+    if (this.routerConfig.prefix) return sanitizeUrl(this.routerConfig.prefix)
 
     return ''
   }
@@ -214,9 +215,8 @@ export class Router {
     )
 
     for (const routeDefinition of routes) {
-      const fullPath: string = Router.sanitizeUrl(
-        controllerMetadata.prefix,
-        routeDefinition.path ?? '/'
+      const fullPath: string = sanitizeUrl(
+        controllerMetadata.prefix + routeDefinition.path ?? '/'
       )
 
       if (!store[fullPath]) {
@@ -238,17 +238,6 @@ export class Router {
     }
 
     return store
-  }
-
-  private static sanitizeUrl(prefix: string, path: string): string {
-    const url: string = prefix + path
-    return (
-      '/' +
-      url
-        .split(/\//g)
-        .filter((s) => s)
-        .join('/')
-    )
   }
 
   private compileRouteDefinitions = (

@@ -1,5 +1,5 @@
 import { AbstractModel, AbstractViewModel, ModelId } from '../../models'
-import { Constructor } from '../../utility-types'
+import { Constructor } from '../../types'
 import {
   modelMetadataStore,
   Property,

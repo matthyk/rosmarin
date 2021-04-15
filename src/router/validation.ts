@@ -5,7 +5,7 @@ import {
 } from './route-definitions'
 import Ajv, { ValidateFunction } from 'ajv'
 import { RouterError } from './errors/router-error'
-import { Constructor } from '../utility-types'
+import { Constructor } from '../types'
 import { plainToClass } from 'class-transformer'
 import { buildValidationSchema } from '../json-schema-builder'
 import { FastifyRequest } from 'fastify'

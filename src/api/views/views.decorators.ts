@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { Constructor, Target } from '../../utility-types'
+import { Constructor, Target } from '../../types'
 import {
   validationMetadataStore,
   viewMetadataStore,

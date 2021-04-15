@@ -1,4 +1,4 @@
-import { Constructor } from '../utility-types'
+import { Constructor } from '../types'
 import { container, inject, Lifecycle, singleton } from 'tsyringe'
 import constructor from 'tsyringe/dist/typings/types/constructor'
 import { AbstractRepository } from './repositories/abstract-repository'

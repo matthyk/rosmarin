@@ -1,5 +1,5 @@
 import { TypeFn } from './type-fn'
-import { Constructor } from '../utility-types'
+import { Constructor } from '../types'
 
 export interface Property {
   name: string

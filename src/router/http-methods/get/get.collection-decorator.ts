@@ -1,11 +1,8 @@
-import {
-  ReturnsConfiguredState,
-  TypedMethodDecorator,
-} from '../../../utility-types'
 import { Route } from '../../decorators'
-import { AbstractModel } from '../../../models/abstract-model'
-import { AbstractGetCollectionState } from '../../../api/states/get/abstract-get-collection-state'
+import { AbstractModel } from '../../../models'
+import { AbstractGetCollectionState } from '../../../api'
 import { ViewConverter } from '../../route-definitions'
+import { ReturnsConfiguredState, TypedMethodDecorator } from '../../types'
 
 /**
  * There should be no validation schema defined for GET requests, because the request payload should be ignored anyway.
@@ -18,11 +15,10 @@ export interface GetRouteDefinition {
 }
 
 export const GetCollection = <
-  Model extends AbstractModel,
-  State extends AbstractGetCollectionState<Model>
+  State extends AbstractGetCollectionState<AbstractModel>
 >(
   routeDefinition: GetRouteDefinition
-): TypedMethodDecorator<ReturnsConfiguredState<never, any, State>> => {
+): TypedMethodDecorator<ReturnsConfiguredState<State>> => {
   return Route({
     ...routeDefinition,
     httpMethod: 'GET',

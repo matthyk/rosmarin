@@ -1,10 +1,11 @@
 import { Controller, Router } from '../../../src'
 import { FastifyRequest } from 'fastify'
 import { HttpResponse } from '../../../src/router/http-response'
-import { RouteStore } from '../../../src/utility-types'
+import { RouteStore } from '../../../src/types'
 import Pino, { Logger } from 'pino'
 // import Mock = jest.Mock
 import { Route } from '../../../src/router/decorators'
+import { sanitizeUrl } from '../../../src/router/santizieUrl'
 
 const logger: Logger = Pino()
 
@@ -349,19 +350,19 @@ describe('router', () => {
 
   describe('sanitizeUrl', () => {
     it('should remove multiple leading slashes', () => {
-      const url: string = Router['sanitizeUrl']('///users', '/:id')
+      const url: string = sanitizeUrl('///users' + '/:id')
 
       expect(url).toEqual('/users/:id')
     })
 
     it('should remove all closing slashes', () => {
-      const url: string = Router['sanitizeUrl']('/tests/', '//')
+      const url: string = sanitizeUrl('/tests/' + '//')
 
       expect(url).toEqual('/tests')
     })
 
     it('should remove multiple embedded slashes', () => {
-      const url: string = Router['sanitizeUrl']('/tests//', '/:id///lol')
+      const url: string = sanitizeUrl('/tests//' + '/:id///lol')
 
       expect(url).toEqual('/tests/:id/lol')
     })
