@@ -25,7 +25,7 @@ import { routerMetadataStore, ControllerMetadata } from '../metadata-stores'
 import { sanitizeUrl } from './santizieUrl'
 import { Constructor } from '../types'
 
-const httpVerbRegex = /GET|get|POST|post|put|PUT|DELETE|delete/
+const httpVerbRegex = /get|post|put|delete/i
 
 const pathParameterRegex = /:/g
 
@@ -216,7 +216,7 @@ export class Router {
 
     for (const routeDefinition of routes) {
       const fullPath: string = sanitizeUrl(
-        controllerMetadata.prefix + routeDefinition.path ?? '/'
+        controllerMetadata.prefix + (routeDefinition.path ?? '/')
       )
 
       if (!store[fullPath]) {
