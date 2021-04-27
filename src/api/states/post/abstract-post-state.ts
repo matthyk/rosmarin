@@ -83,7 +83,7 @@ export abstract class AbstractPostState<
    * You should override this method in subclasses if you do not want to use the built-in merge function which requires to annotate the incoming view model
    */
   protected merge(source: V, target: T): T {
-    return merge(source, target)
+    return merge(source, target, this.logger)
   }
 
   protected abstract createDatabaseModel(): T

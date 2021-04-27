@@ -98,7 +98,11 @@ export abstract class AbstractPutState<
   }
 
   private mergeViewModelIntoDatabaseModel(): void {
-    this.modelInDatabase = merge(this.modelToUpdate, this.modelInDatabase)
+    this.modelInDatabase = merge(
+      this.modelToUpdate,
+      this.modelInDatabase,
+      this.logger
+    )
     this.modelInDatabase.lastModifiedAt = Date.now()
   }
 
