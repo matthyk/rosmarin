@@ -10,9 +10,15 @@ This framework is heavily inspired by [Jersey](https://eclipse-ee4j.github.io/je
 the research project [GeMARA](https://fiw.fhws.de/forschung/projekte/gemara/) of the App.lab 
 of the University of Applied Sciences Wuerzburg-Schweinfurt, which focuses on the automatic generation of REST APIs.
 
+## Disclaimer
+
+Although Rosmarin provides a lot of help to develop REST APIs, you should still have a basic understanding of the topic.
+I recommend reading Roy Fielding's PhD thesis, in which he develops the REST architectural style.
+
+
 ## Getting started
 
-it is difficult to write a small and understandable example, because you need to understand some concepts of Rosmarin
+It is difficult to write a small and understandable example, because you need to understand some concepts of Rosmarin
 before you can get started. But I promise, it's worth it!
 
 Jump right into the documentation!
