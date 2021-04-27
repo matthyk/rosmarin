@@ -1,8 +1,7 @@
 import { AbstractPropertyStore } from '../../../src/metadata-stores/abstract-property-store'
 import { AbstractModel } from '../../../src'
 import { Property } from '../../../src/metadata-stores'
-import { Target } from '../../../src/types'
-import { Constructor } from '../../../dist/utility-types'
+import { Target, Constructor } from '../../../src/types'
 
 describe('AbstractPropertyStore', () => {
   const randomDecorator = (
