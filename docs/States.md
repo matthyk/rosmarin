@@ -64,13 +64,41 @@ Used by every state to pass the request and response object from the controller 
 
 Abstract method that implements the classes for the respective HTTP verbs. This defines the HTTP verb specific workflow.
 
+##### configureState
+
+This method must be used to configure the state. This includes the `stateEntryConstraints`, `allowed user roles`, 
+`API key verification` activation, `caching`, `user authentication` activation.
+
+```typescript
+import { AbstractState } from './abstract-state-with-caching'
+
+class MyState extends AbstractStateWithCaching {
+  
+  protected configureState(): void {
+    // API key verification is now activated
+    this.activateApiKeyCheck()
+    
+    // authentication is now activated 
+    // if you want to use the `authenticationInfo` property the authentication must be activated
+    this.activateUserAuthentication()
+    
+    // if this condition returns false, the state will send a 403 response to the client
+    this.addStateEntryConstraint(() => this.req.headers['x-custom-header'] === 'random value')
+    
+    // with these 2 lines the Cache-Control header 'private, max-age=3600' is set and the ETag header is also set
+    this.maxAgeInSeconds = 3600
+    this.setHttpCachingType( CachingType.VALIDATION_ETAG, CacheControlConfiguration.PRIVATE )
+  } 
+}
+```
+
 ##### verifyRolesOfClient
 
 Returns true if user is allowed to access the state based on his roles.
 
 ##### build
 
-Only method, besides the [configure](#configure) method, that is called from outside the state. Start the processing of 
+Only method, besides the [configure](#configure) method, that is called from outside the state. Starts the processing of 
 the request.
 
 ##### verifyApiKey
@@ -105,7 +133,21 @@ Adds a link header to the HTTP response. A uri template can be passed that is fi
 this.addLink('/users/{}/friends/{}', 'getFriendOfUser', 'application/vnd.friend+json', [453, 2394] )
 ```
 
-### GET
+##### addConstrainedLink
 
-#### Abstract
+Only adds the given link if the constraint returns `true`.
 
+```typescript
+// only adds links if the current user requests its own profile
+this.addConstrainedLink(
+  () => this.requestedId == this.authenticationInfo.userMode.id, 
+  '/users/{}', 
+  'getOwnProfile', 
+  'application/vnd.user-admin+json',
+  [this.requestedId]
+)
+```
+
+##### activateApiKeyCheck
+
+Activates the API key verification. This should be called inside the [configureState](#configureState) method
