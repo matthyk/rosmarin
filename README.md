@@ -45,7 +45,7 @@ configured by the developer.
 ### class-transformer
 
 [class-transformer](https://github.com/typestack/class-transformer) is used to transform plain object to a class instance.
-This is important because only in this way it is possible to work with decorators, which are used heavily in rosemary.
+This is important because only in this way it is possible to work with decorators, which are used heavily in Rosmarin.
 
 ### negotiator
 
