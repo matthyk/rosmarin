@@ -148,7 +148,7 @@ import { AbstractViewModel } from "./abstract-view-model";
 import { collectionView, viewProp } from "./views.decorators";
 
 @collectionView()
-class UserView extends UserView {}
+class CollectionUserView extends UserView {}
 ```
 
 Through `@collectionView`, Rosmarin registers that it is a collection view and applies the decorated class schema to each 
