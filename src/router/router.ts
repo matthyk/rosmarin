@@ -81,11 +81,11 @@ export class Router {
     )
 
     fastify.decorateRequest('fullUrl', function (this: FastifyRequest) {
-      return sanitizeUrl(this.protocol + '://' + this.hostname + this.url)
+      return this.protocol + ':/' + sanitizeUrl(this.hostname + this.url)
     })
 
     fastify.decorateRequest('baseUrl', function (this: FastifyRequest) {
-      return sanitizeUrl(this.protocol + '://' + this.hostname + prefix)
+      return this.protocol + ':/' + sanitizeUrl(this.hostname + prefix)
     })
   }
 
