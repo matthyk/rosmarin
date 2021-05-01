@@ -1,4 +1,3 @@
-import 'reflect-metadata'
 import { ApplicationConfig } from './application-config'
 import { RestApplication } from './rest-application'
 
