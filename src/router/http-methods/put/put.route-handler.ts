@@ -59,7 +59,7 @@ export const putRouteHandler = (
         } else {
           reply
             .type(negotiationResult.produces ?? constants.DEFAULT_MEDIA_TYPE)
-            .serializer(negotiationResult.viewConverter)
+            .serializer(negotiationResult.viewConverter ?? JSON.stringify)
             .send(httpResponse.entity)
         }
       } else {
