@@ -8,6 +8,11 @@ import {
 import { AbstractModel } from '../../models'
 
 export abstract class AbstractStateWithCaching extends AbstractState {
+  protected static DEFAULT_CACHE_CONTROL_CONFIGURATION = new Set([
+    CacheControlConfiguration.NO_CACHE,
+    CacheControlConfiguration.NO_STORE,
+  ])
+
   protected cachingType: CachingType
 
   protected cacheControlConfigurationSet: Set<CacheControlConfiguration>
@@ -37,10 +42,8 @@ export abstract class AbstractStateWithCaching extends AbstractState {
   protected constructor() {
     super()
     this.cachingType = CachingType.DEACTIVATE_CACHE
-    this.cacheControlConfigurationSet = new Set([
-      CacheControlConfiguration.NO_CACHE,
-      CacheControlConfiguration.NO_STORE,
-    ])
+    this.cacheControlConfigurationSet =
+      AbstractStateWithCaching.DEFAULT_CACHE_CONTROL_CONFIGURATION
   }
 
   protected defineModelForCaching(model: AbstractModel): void {
@@ -58,7 +61,8 @@ export abstract class AbstractStateWithCaching extends AbstractState {
         cacheControlConfigurations
       )
     } else {
-      this.cacheControlConfigurationSet = new Set<CacheControlConfiguration>() // TODO
+      this.cacheControlConfigurationSet =
+        AbstractStateWithCaching.DEFAULT_CACHE_CONTROL_CONFIGURATION
     }
   }
 
