@@ -64,9 +64,6 @@ const plain = {
   },
 }
 
-console.log(plainToClass(View, plain))
-console.log(customPlainToClass(View, plain))
-
 suite
   // ~ 179,860 ops/sec
   .add('transform to class with class-transformer', function () {
