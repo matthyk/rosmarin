@@ -108,7 +108,10 @@ const buildObjectSchema = <
   for (const prop of validationProperties) {
     const { required, ...options } = prop.schemaOptions
 
-    if (typeof required === 'undefined' || required === true) {
+    if (
+      (typeof required === 'undefined' || required === true) &&
+      objectSchema.required.includes(prop.name) === false
+    ) {
       objectSchema.required.push(prop.name)
     }
 
