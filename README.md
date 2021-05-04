@@ -22,7 +22,7 @@ Rosmarin is still in active development and has not yet reached version 0.1.0.
 It is difficult to write a small and understandable example, because you need to understand some concepts of Rosmarin
 before you can get started. But I promise, it's worth it!
 
-Jump right into the documentation!
+Jump right into the [documentation](https://github.com/matthyk/rosmarin.ts/tree/main/docs)!
 
 ## Used dependencies
 
