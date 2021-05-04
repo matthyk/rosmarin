@@ -1,4 +1,4 @@
-import { HttpResponse } from '../../router/http-response'
+import { HttpResponse } from '../../router'
 import { linkHeader } from '../links'
 import RelationTypes from '../relation-types'
 
