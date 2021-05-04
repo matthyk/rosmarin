@@ -4,11 +4,11 @@ import {
   Delete,
   Get,
   GetCollection,
+  HttpRequest,
+  HttpResponse,
   Post,
   Put,
 } from '../../../src'
-import { HttpRequest } from '../../../src/router/http-request'
-import { HttpResponse } from '../../../src/router/http-response'
 import { PostUser } from './states/post-user'
 import { createUserViewSchema } from './views/create-user-view'
 import { GetSingleUser } from './states/get-single-user'
