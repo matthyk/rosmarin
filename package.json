@@ -2,17 +2,16 @@
   "name": "rosmarin.ts",
   "version": "0.1.0",
   "description": "Framework for REST API development",
-  "main": "index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test:precommit": "jest --config jest.config.ts --findRelatedTests",
     "test": "jest --config jest.config.ts",
-    "format": "prettier --write \"src/**/*.ts\" \"__test__/**/*.spec.ts\" \"__test__/setup.ts\" \"./*.ts\"",
-    "lint": "eslint \"src/**/*.ts\" \"__test__/**/*.spec.ts\" \"./*.ts\"",
-    "lint:fix": "eslint --fix \"src/**/*.ts\" \"__test__/**/*.spec.ts\" \"./*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"__test__/**/*.ts\" \"examples/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\" \"__test__/**/*.ts\" \"examples/**/*.ts\"",
+    "lint:fix": "eslint --fix \"src/**/*.ts\" \"__test__/**/*.ts\" \"examples/**/*.ts\"",
     "build": "tsc --project tsconfig.build.json",
-    "clean": "rimraf dist",
-    "dev": "npm run clean && npm run build && node dist/example/index.js",
-    "convert": "ts-node src/examples/example-1/index.ts"
+    "clean": "rimraf dist"
   },
   "keywords": [
     "REST",
@@ -31,7 +30,6 @@
     "tsyringe": "^4.4.0"
   },
   "devDependencies": {
-    "@types/bcrypt": "^3.0.0",
     "@types/benchmark": "^2.1.0",
     "@types/etag": "^1.8.0",
     "@types/jest": "^26.0.20",
@@ -42,13 +40,11 @@
     "@types/pino": "^6.3.6",
     "@typescript-eslint/eslint-plugin": "^4.16.1",
     "@typescript-eslint/parser": "^4.16.1",
-    "autocannon": "^7.0.5",
     "bcrypt": "^5.0.1",
     "benchmark": "^2.1.4",
     "eslint": "^7.21.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-import": "^2.22.1",
-    "generate-function": "^2.3.1",
     "husky": "^4.3.8",
     "jest": "^26.6.3",
     "jsonwebtoken": "^8.5.1",
