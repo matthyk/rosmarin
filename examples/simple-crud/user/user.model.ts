@@ -1,6 +1,6 @@
 import { AbstractModel, Link, link, modelProp } from '../../../src'
 
-export class User extends AbstractModel {
+export class User extends AbstractModel<number> {
   @modelProp()
   name: string
 
