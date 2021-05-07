@@ -73,7 +73,7 @@ The interface `Configured<?>` ensures that the `configure` method is called in e
 ## Route definitions
 
 Rosmarin is very strict about how an HTTP specific route must be defined. There is a separate interface for each of the 
-four HTTP verbs. The `@Post` decorator to register a `POST route therefore only accepts the route definition provided for it.`
+four HTTP verbs. The `@Post` decorator to register a `POST` route therefore only accepts the route definition provided for it.
 
 
 ### GET
