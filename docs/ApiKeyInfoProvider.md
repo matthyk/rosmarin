@@ -1,5 +1,7 @@
 # ApiKeyInfoProvider
 
+## Registration and Implementation
+
 In Rosmarin, the `ApiKeyInfoProvider` is the central class where the check takes place whether a request contains a 
 valid API key. The class responsible for this should be registered with the method `registerApiKeyInfoProvider` in 
 the `RestApplication`.
@@ -27,3 +29,23 @@ class MyApiKeyInfoProvider implements IApiKeyInfoProvider {
   }
 }
 ```
+
+## Usage
+
+The `ApiKeyInfoProvider` is automatically injected into each state. However, by default, no API key verification is performed.
+You must activate it in the `configureState` method via the `activateApiKeyCheck` method.
+
+```typescript
+import { AbstractGetState } from "./abstract-get-state";
+
+class MyState extends AbstractGetState {
+
+  public configureState(): void {
+    this.activateApiKeyCheck()
+  }
+}
+```
+
+If you have activated the check and the client has sent an invalid API key, it will automatically respond with a `401` 
+status code.
+
