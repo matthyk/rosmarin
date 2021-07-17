@@ -8,7 +8,7 @@ import {
 import { User } from './user.model'
 
 interface UserInDB {
-  id: number
+  id: ModelId
 
   lastModifiedAt: number
 

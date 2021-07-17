@@ -1,9 +1,9 @@
 import { ModelId } from './types'
 import { modelProp } from '../api'
 
-export abstract class AbstractModel<T extends string | number = ModelId> {
+export abstract class AbstractModel {
   @modelProp()
-  public id: T
+  public id: ModelId
 
   public lastModifiedAt: number
 }
