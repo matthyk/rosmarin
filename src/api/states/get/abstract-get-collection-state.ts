@@ -1,7 +1,7 @@
 import { AbstractModel, ModelId } from '../../../models'
 import { AbstractState } from '../abstract-state'
 import { CollectionModelDatabaseResult } from '../../../database'
-import { HttpResponse } from '../../../router/http-response'
+import { HttpResponse } from '../../../router'
 import { CacheControl } from '../../caching'
 import { FastifyRequest } from 'fastify'
 import { AbstractPagingBehaviour } from '../../pagination'
@@ -35,15 +35,25 @@ export abstract class AbstractGetCollectionState<
       return this.response.unauthorized()
     }
 
+    await this.beforeLoadingModelFromDatabase()
+
     this.databaseResult = await this.loadModelsFromDatabase()
+
+    await this.afterLoadingModelFromDatabase()
 
     if (this.databaseResult.hasError()) {
       return this.response.internalServerError()
     }
 
+    await this.beforeVerifyingStateEntryConstraints()
+
     if ((await this.verifyAllStateEntryConstraints()) === false) {
       return this.response.forbidden()
     }
+
+    await this.afterVerifyingStateEntryConstraints()
+
+    await this.beforeCreatingResponse()
 
     return await this.createResponse()
   }
@@ -122,4 +132,14 @@ export abstract class AbstractGetCollectionState<
   protected getHeaderForNumberOfResults(): string {
     return AbstractGetCollectionState.HEADER_NUMBEROFRESULTS
   }
+
+  async beforeLoadingModelFromDatabase(): Promise<void> {}
+
+  async afterLoadingModelFromDatabase(): Promise<void> {}
+
+  async beforeVerifyingStateEntryConstraints(): Promise<void> {}
+
+  async afterVerifyingStateEntryConstraints(): Promise<void> {}
+
+  async beforeCreatingResponse(): Promise<void> {}
 }

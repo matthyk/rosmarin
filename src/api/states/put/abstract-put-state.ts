@@ -3,7 +3,7 @@ import {
   NoContentDatabaseResult,
   SingleModelDatabaseResult,
 } from '../../../database'
-import { HttpResponse } from '../../../router/http-response'
+import { HttpResponse } from '../../../router'
 import { AbstractStateWithCaching } from '../abstract-state-with-caching'
 import { linkHeader } from '../../links'
 import RelationTypes from '../../relation-types'
@@ -45,7 +45,11 @@ export abstract class AbstractPutState<
       return this.response.unauthorized('You have no power here!')
     }
 
+    await this.beforeLoadingModelFromDatabase()
+
     this.dbResultAfterGet = await this.loadModelFromDatabase()
+
+    await this.afterLoadingModelFromDatabase()
 
     this.modelInDatabase = this.dbResultAfterGet.result
 
@@ -58,15 +62,25 @@ export abstract class AbstractPutState<
 
     this.modelForConstraintCheck = this.modelToUpdate
 
+    await this.verifyAllStateEntryConstraints()
+
     if ((await this.verifyAllStateEntryConstraints()) === false) {
       return this.response.forbidden()
     }
+
+    await this.afterVerifyingStateEntryConstraints()
 
     if (this.clientKnowsCurrentModelState() === false) {
       return this.response.preconditionFailed()
     }
 
+    await this.beforeMergeNewModelWithDatabaseModel()
+
     this.mergeViewModelIntoDatabaseModel()
+
+    await this.afterMergeNewModelWithDatabaseModel()
+
+    await this.beforeUpdatingModelInDatabase()
 
     this.dbResultAfterUpdate = await this.updateModelInDatabase()
 
@@ -74,7 +88,11 @@ export abstract class AbstractPutState<
       return this.response.internalServerError()
     }
 
+    await this.afterModelHasBeenUpdatedInDatabase()
+
     this.modelForConstraintCheck = this.modelInDatabase
+
+    await this.beforeCreatingResponse()
 
     return await this.createResponse()
   }
@@ -145,4 +163,20 @@ export abstract class AbstractPutState<
       )
     )
   }
+
+  protected async beforeLoadingModelFromDatabase(): Promise<void> {}
+
+  protected async afterLoadingModelFromDatabase(): Promise<void> {}
+
+  protected async afterVerifyingStateEntryConstraints(): Promise<void> {}
+
+  protected async beforeCreatingResponse(): Promise<void> {}
+
+  protected async beforeMergeNewModelWithDatabaseModel(): Promise<void> {}
+
+  protected async afterMergeNewModelWithDatabaseModel(): Promise<void> {}
+
+  protected async beforeUpdatingModelInDatabase(): Promise<void> {}
+
+  protected async afterModelHasBeenUpdatedInDatabase(): Promise<void> {}
 }

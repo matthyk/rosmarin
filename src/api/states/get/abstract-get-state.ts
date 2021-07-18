@@ -1,6 +1,6 @@
 import { AbstractModel, ModelId } from '../../../models'
 import { AbstractStateWithCaching } from '../abstract-state-with-caching'
-import { HttpResponse } from '../../../router/http-response'
+import { HttpResponse } from '../../../router'
 import { SingleModelDatabaseResult } from '../../../database'
 import { linkHeader } from '../../links'
 import RelationTypes from '../../relation-types'
@@ -26,15 +26,27 @@ export abstract class AbstractGetState<
 
     this.extractFromRequest()
 
+    await this.beforeApiKeyVerification()
+
     if ((await this.verifyApiKey()) === false) {
       return this.response.unauthorized('API key required.')
     }
+
+    await this.afterApiKeyVerification()
+
+    await this.beforeAuthorization()
 
     if ((await this.verifyRolesOfClient()) === false) {
       return this.response.forbidden('You have no power here!') // TODO: 401 vs 403?
     }
 
+    await this.afterAuthorization()
+
+    await this.beforeLoadingModelFromDatabase()
+
     this.requestedModel = await this.loadModelFromDatabase()
+
+    await this.afterLoadingModelFromDatabase()
 
     if (this.requestedModel.hasError()) {
       return this.response.internalServerError()
@@ -47,9 +59,15 @@ export abstract class AbstractGetState<
 
     this.modelForConstraintCheck = this.requestedModel.result
 
+    await this.beforeVerifyingStateEntryConstraints()
+
     if ((await this.verifyAllStateEntryConstraints()) === false) {
       return this.response.forbidden('You have no power here!')
     }
+
+    await this.afterVerifyingStateEntryConstraints()
+
+    await this.beforeCheckingCachingPreconditions()
 
     if (this.clientKnowsCurrentModelState()) {
       return this.response.notModified()
@@ -58,6 +76,10 @@ export abstract class AbstractGetState<
     }
 
     this.modelForCaching = this.requestedModel.result // TODO: ???
+
+    await this.afterCheckingCachingPreconditions()
+
+    await this.beforeCreatingResponse()
 
     return await this.createResponse()
   }
@@ -116,4 +138,30 @@ export abstract class AbstractGetState<
       )
     )
   }
+
+  /*
+  Hook methods
+  */
+
+  async beforeApiKeyVerification(): Promise<void> {}
+
+  async afterApiKeyVerification(): Promise<void> {}
+
+  async beforeAuthorization(): Promise<void> {}
+
+  async afterAuthorization(): Promise<void> {}
+
+  async beforeLoadingModelFromDatabase(): Promise<void> {}
+
+  async afterLoadingModelFromDatabase(): Promise<void> {}
+
+  async beforeVerifyingStateEntryConstraints(): Promise<void> {}
+
+  async afterVerifyingStateEntryConstraints(): Promise<void> {}
+
+  async beforeCheckingCachingPreconditions(): Promise<void> {}
+
+  async afterCheckingCachingPreconditions(): Promise<void> {}
+
+  async beforeCreatingResponse(): Promise<void> {}
 }

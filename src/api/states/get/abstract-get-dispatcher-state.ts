@@ -1,5 +1,5 @@
 import { AbstractState } from '../abstract-state'
-import { HttpResponse } from '../../../router/http-response'
+import { HttpResponse } from '../../../router'
 import { CacheControl } from '../../caching'
 import { linkHeader } from '../../links'
 import RelationTypes from '../../relation-types'

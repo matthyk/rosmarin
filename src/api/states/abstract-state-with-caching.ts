@@ -144,8 +144,6 @@ export abstract class AbstractStateWithCaching extends AbstractState {
     this.response.etag(this.createEntityTagOfResult())
   }
 
-  protected createEntityTagOfResult(): string
-  protected createEntityTagOfResult(model: AbstractModel): string
   protected createEntityTagOfResult(model?: AbstractModel): string {
     return this.createEtag(model ?? this.modelForCaching)
   }

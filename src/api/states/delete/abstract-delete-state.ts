@@ -38,7 +38,11 @@ export abstract class AbstractDeleteState<
 
     // locking
 
+    await this.beforeLoadingModelFromDatabase()
+
     this.dbResultAfterGet = await this.loadModelFromDatabase()
+
+    await this.afterLoadingModelFromDatabase()
 
     if (this.dbResultAfterGet.isEmpty()) {
       return this.response.notFound()
@@ -46,19 +50,29 @@ export abstract class AbstractDeleteState<
 
     this.modelForConstraintCheck = this.dbResultAfterGet.result
 
+    await this.beforeVerifyingStateEntryConstraints()
+
     if ((await this.verifyAllStateEntryConstraints()) === false) {
       return this.response.forbidden()
     }
+
+    await this.afterVerifyingStateEntryConstraints()
 
     if (this.clientKnowsCurrentModelState() === false) {
       return this.response.preconditionFailed()
     }
 
+    await this.beforeDeletingModelInDatabase()
+
     this.dbResultAfterDelete = await this.deleteModelInDatabase()
+
+    await this.afterModelHasBeenDeletedInDatabase()
 
     if (this.dbResultAfterDelete.hasError()) {
       return this.response.internalServerError()
     }
+
+    await this.beforeCreatingResponse()
 
     return this.createResponse()
   }
@@ -105,4 +119,20 @@ export abstract class AbstractDeleteState<
   }
 
   protected abstract defineTransitionLinks(): Promise<void> | void
+
+  protected async beforeLoadingModelFromDatabase(): Promise<void> {}
+
+  protected async afterLoadingModelFromDatabase(): Promise<void> {}
+
+  protected async afterVerifyingStateEntryConstraints(): Promise<void> {}
+
+  protected async beforeCreatingResponse(): Promise<void> {}
+
+  protected async beforeMergeNewModelWithDatabaseModel(): Promise<void> {}
+
+  protected async beforeVerifyingStateEntryConstraints(): Promise<void> {}
+
+  protected async beforeDeletingModelInDatabase(): Promise<void> {}
+
+  protected async afterModelHasBeenDeletedInDatabase(): Promise<void> {}
 }
